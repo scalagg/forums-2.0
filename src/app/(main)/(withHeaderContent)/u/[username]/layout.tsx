@@ -53,22 +53,25 @@ export default async function Layout({ children: children }: UserParams) {
 
   const server = await getCurrentServer(uuid);
   let status = server ? "online" : "offline";
-  let dateJoined;
-  let lastSeenOn;
-
 
   // TODO: Find a way to get sessions from mongo or something
-  if (!Array.isArray(profile.logins) || profile.logins.length === 0) {
-    dateJoined = "N/A";
-    lastSeenOn = "N/A";
-  } else {
-    const dateJoinedMillis = profile.logins.reduce((acc, crr) => crr.time < acc ? crr.time : acc, Date.now());
-    const lastSeenOnMillis = profile.logins.reduce((acc, crr) => crr.time > acc ? crr.time : acc, Date.now());
+  const firstConnectionRaw = profile.metadata?.["first-connection"];
+  const lastConnectionRaw = profile.metadata?.["last-connection"];
 
-    // i know its cursed but it doesnt work otherwise
-    dateJoined = new Date(dateJoinedMillis / 1000 * 1000).toDateString();
-    lastSeenOn = new Date(lastSeenOnMillis / 1000 * 1000).toDateString();
-  }
+  const firstConnection = typeof firstConnectionRaw === 'object' && firstConnectionRaw !== null && 'value' in (firstConnectionRaw as any)
+    ? (firstConnectionRaw as any).value
+    : firstConnectionRaw;
+  const lastConnection = typeof lastConnectionRaw === 'object' && lastConnectionRaw !== null && 'value' in (lastConnectionRaw as any)
+    ? (lastConnectionRaw as any).value
+    : lastConnectionRaw;
+
+  const dateJoined = firstConnection
+    ? new Date(Number(firstConnection)).toLocaleDateString()
+    : "N/A";
+
+  const lastSeenOn = lastConnection
+    ? new Date(Number(lastConnection)).toLocaleDateString()
+    : "N/A";
 
   let punishments = (await getPunishments(uuid))[0] || [];
 

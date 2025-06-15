@@ -1,7 +1,6 @@
 import { getPracticeLeaderboard } from "@/services/forum/stats/GameStatsService";
 import { getUuid } from "@/services/forum/account/AccountService";
-import Image from "next/image";
-import Link from "next/link";
+import StatsWidget from "./StatsWidget";
 
 interface PageProps {
   params: { username: string };
@@ -19,28 +18,28 @@ export default async function PracticeLeaderboardPage({ params }: PageProps) {
   const globalStats = profile.globalStatistics || {};
   const rankedStats = profile.rankedStatistics || {};
 
+  // Prepare entries for the widget
+  const globalEntries = Object.entries(globalStats).map(
+    ([key, value]) => `${key}: ${value}`
+  );
+  const rankedEntries = Object.entries(rankedStats).map(
+    ([kit, stats]) => `${kit}: ELO ${stats.elo ?? 'N/A'}`
+  );
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 items-center">
       <h1 className="text-2xl font-bold text-center">Practice Stats</h1>
-      <div className="card bg-base-200 p-4 rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">Global Stats</h2>
-        <ul>
-          {Object.entries(globalStats).map(([key, value]) => (
-            <li key={key} className="flex gap-2">
-              <span className="font-bold">{key}:</span> <span>{value as any}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="card bg-base-200 p-4 rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">Ranked Stats (ELO)</h2>
-        <ul>
-          {Object.entries(rankedStats).map(([kit, stats]) => (
-            <li key={kit} className="flex gap-2">
-              <span className="font-bold">{kit}:</span> <span>ELO: {(stats as any).elo ?? 'N/A'}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="flex flex-wrap gap-8 justify-center">
+        <StatsWidget
+          title="Global Stats"
+          entries={globalEntries}
+          backgroundImage="/img/practice-bg.webp"
+        />
+        <StatsWidget
+          title="Ranked Stats (ELO)"
+          entries={rankedEntries}
+          backgroundImage="/img/practice-bg.webp"
+        />
       </div>
     </div>
   );
