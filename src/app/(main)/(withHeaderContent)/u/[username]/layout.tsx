@@ -100,14 +100,16 @@ export default async function Layout({ children: children }: UserParams) {
 
   if (uuid) {
     const res0 = await GetFriends(uuid);
-    const isError = isResultError(res0);
-    if (isError)
-      console.error("Could not fetch user friends: HTTP " + res0[1]);
-    else {
-      for (const acc of res0[0]!) {
+    if (!Array.isArray(res0)) {
+      console.error("Could not fetch user friends: HTTP", res0);
+    } else {
+      for (const acc of res0) {
+        // Determine the 'other' friend in the friendship
+        let friendUuid = acc.uuidA === uuid ? acc.uuidB : acc.uuidA;
+        let friendName = acc.nameA === profile.name ? acc.nameB : acc.nameA;
         friends.push({
-          uuid: acc.uuid,
-          name: (await getUsernameFromUuid(acc.uuid))!,
+          uuid: friendUuid,
+          name: friendName,
         });
       }
     }

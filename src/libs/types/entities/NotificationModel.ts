@@ -1,11 +1,11 @@
 import { UUID } from '@/libs/types/UUID';
 
 export interface NotificationModel {
-    uuid: UUID;
-    target: UUID;
+    uuid: string;
+    target: string;
     createdAt: number;
     text: string;
-    placeholders: Map<string, string>;
+    placeholders: Record<string, string>;
     read: boolean;
 
     // Helper methods

@@ -246,20 +246,25 @@ export const Login = interceptSession(async (
  * @returns Array of friend objects containing both users' info
  */
 export const GetFriends = async (
-    uuid: string,
-    client: HTTPClient = new HTTPClient(process.env.API_URL!)
+  uuid: string,
+  client: HTTPClient = new HTTPClient(process.env.API_URL!)
 ): Promise<ProfileFriend[]> => {
-    try {
-        const [profile, status, error] = await client.GetAsync<ProfileResponse>(`/profile/${uuid}`);
-        if (error || !profile) {
-            console.warn(`Failed to fetch friends for ${uuid}:`, error);
-            return [];
-        }
-        return profile.friends || [];
-    } catch (error) {
-        console.error(`Error fetching friends for ${uuid}:`, error);
-        return [];
-    }
+  try {
+      console.log(`Fetching friends for ${uuid}...`);
+      const [profile, status, error] = await client.GetAsync<ProfileResponse>(`/profile/${uuid}?webResolved=true`);
+      console.log('GetAsync result:', { profile, status, error });
+      if (error || !profile) {
+          console.warn(`Failed to fetch friends for ${uuid}: status=${status}, error=${error}`);
+          return [];
+      }
+      if (!Array.isArray(profile.friends)) {
+          return [];
+      }
+      return profile.friends;
+  } catch (error) {
+      console.error(`Error fetching friends for ${uuid}:`, error);
+      return [];
+  }
 };
 
 /**
