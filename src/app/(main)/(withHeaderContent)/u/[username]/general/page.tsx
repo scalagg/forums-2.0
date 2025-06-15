@@ -1,40 +1,46 @@
 import { getPracticeLeaderboard } from "@/services/forum/stats/GameStatsService";
+import { getUuid } from "@/services/forum/account/AccountService";
 import Image from "next/image";
 import Link from "next/link";
 
-export default async function PracticeLeaderboardPage() {
-  const [leaderboard, status, error] = await getPracticeLeaderboard();
-  if (!leaderboard) return <div>Error loading leaderboard</div>;
+interface PageProps {
+  params: { username: string };
+}
 
-  // Get all stat categories (e.g., ELO, etc.)
-  const categories = Object.keys(leaderboard.entries);
+export default async function PracticeLeaderboardPage({ params }: PageProps) {
+  const username = params.username;
+  const uuid = await getUuid(username);
+
+  if (!uuid) return <div>Error: No UUID provided</div>;
+
+  const [profile, status, error] = await getPracticeLeaderboard(uuid);
+  if (!profile) return <div>Error loading practice stats</div>;
+
+  const globalStats = profile.globalStatistics || {};
+  const rankedStats = profile.rankedStatistics || {};
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-center">Practice Leaderboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {categories.map((category) => (
-          <div key={category} className="card bg-base-200 p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">{category}</h2>
-            <ul>
-              {leaderboard.entries[category].map((entry, idx) => (
-                <li key={entry.uuid} className="flex items-center gap-3 mb-2">
-                  <span className="w-6 text-right">{idx + 1}.</span>
-                  <Image
-                    src={`https://skins.mcstats.com/skull/${entry.uuid}`}
-                    alt={entry.resolvedName}
-                    width={32}
-                    height={32}
-                  />
-                  <Link href={`/u/${entry.resolvedName}`}>
-                    <span style={{ color: entry.webColor }} className="font-bold">{entry.resolvedName}</span>
-                  </Link>
-                  <span className="ml-auto">{entry.value}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <h1 className="text-2xl font-bold text-center">Practice Stats</h1>
+      <div className="card bg-base-200 p-4 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Global Stats</h2>
+        <ul>
+          {Object.entries(globalStats).map(([key, value]) => (
+            <li key={key} className="flex gap-2">
+              <span className="font-bold">{key}:</span> <span>{value as any}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="card bg-base-200 p-4 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Ranked Stats (ELO)</h2>
+        <ul>
+          {Object.entries(rankedStats).map(([kit, stats]) => (
+            <li key={kit} className="flex gap-2">
+              <span className="font-bold">{kit}:</span> <span>ELO: {(stats as any).elo ?? 'N/A'}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
