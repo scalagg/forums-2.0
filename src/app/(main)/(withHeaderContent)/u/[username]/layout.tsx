@@ -54,7 +54,6 @@ export default async function Layout({ children: children }: UserParams) {
   const server = await getCurrentServer(uuid);
   let status = server ? "online" : "offline";
 
-  // TODO: Find a way to get sessions from mongo or something
   const firstConnectionRaw = profile.metadata?.["first-connection"];
   const lastConnectionRaw = profile.metadata?.["last-connection"];
 
