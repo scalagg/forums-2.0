@@ -19,7 +19,7 @@ export const getRankColor = async (uuid: string, client: HTTPClient = new HTTPCl
 
 
 export const getGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Grant[]>(`/grants/${uuid}`);
+  await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
 
 ///**
 // * Endpoint to retrieve a single grant by its UUID and convert it to a simplified form for the site.

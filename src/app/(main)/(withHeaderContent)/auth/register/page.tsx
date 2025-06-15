@@ -28,7 +28,7 @@ const RequestRegister = () => {
     <ul className="ml-5 list-disc list-outside flex flex-col gap-2 text-left">
       <li className="text-secondary">
         <h5><strong>Step 1:</strong></h5>
-        <span className="font-semibold text-base-content">Connect to mccade.net.</span>
+        <span className="font-semibold text-base-content">Connect to scala.gg.</span>
       </li>
       <li className="text-secondary">
         <h5><strong>Step 2:</strong></h5>

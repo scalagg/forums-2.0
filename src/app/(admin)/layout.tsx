@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Metadata } from 'next';
 
-const title = 'MCCade - M.O.T.H.E.R.';
+const title = 'Scala - M.O.T.H.E.R.';
 const description = 'Metrics Overview Tracking & Health Evaluation Reporting.';
 export const metadata: Metadata = {
   title: title,

@@ -5,7 +5,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const fallbackImage = "/img/mccade-stamp.png"
+const fallbackImage = "/img/Scala-stamp.png"
 interface NewsWidgetProps {
   src: string;
   title: string;

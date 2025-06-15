@@ -86,9 +86,9 @@ export const QUESTIONS = [
         name: "applicationReason",
         displayName: "Application Reason",
         required: true,
-        label: 'What made you decide to apply for MCCade?',
+        label: 'What made you decide to apply for Scala?',
         type: 'TextArea',
-        placeholder: 'Please describe why you want to work for MCCade and how you can contribute to the server.'
+        placeholder: 'Please describe why you want to work for Scala and how you can contribute to the server.'
       },
       {
         name: "skills",
@@ -96,7 +96,7 @@ export const QUESTIONS = [
         required: true,
         label: 'What skills do you have that you think will benefit our team? What can you bring to the table?',
         type: 'TextArea',
-        placeholder: 'Please list what skills you can bring to MCCade.',
+        placeholder: 'Please list what skills you can bring to Scala.',
       },
       {
         name: "extraNotes",

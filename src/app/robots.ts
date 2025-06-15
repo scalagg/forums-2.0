@@ -6,6 +6,6 @@ export default function Robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://mccade.net/sitemap.xml',
+    sitemap: 'https://scala.gg/sitemap.xml',
   }
 }

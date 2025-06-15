@@ -40,7 +40,7 @@ export default function Page() {
   }
 
   return <>
-    <h3 className="mb-4 text-primary">Login to MCCade</h3>
+    <h3 className="mb-4 text-primary">Login to Scala</h3>
     {error && <p className="text-error mb-1">{error}</p>}
     <form onSubmit={onSubmit}>
       <input className="py-2 px-4 min-h-fit h-fit w-full overflow-hidden rounded-lg mb-2"

@@ -1,6 +1,16 @@
 import HTTPClient from "@/libs/HTTPClient";
-import SkywarsStats from "@/libs/types/entities/SkywarsStats";
 
+export interface LeaderboardEntry {
+  uuid: string;
+  value: string;
+  webColor: string;
+  resolvedName: string;
+}
 
-export const getSkywarsStats = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<SkywarsStats>(`/leaderboards/stats/skywars/${uuid}`);
+export interface LeaderboardModel {
+  name: string;
+  entries: Record<string, LeaderboardEntry[]>;
+}
+
+export const getPracticeLeaderboard = async (client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
+  await client.GetAsync<LeaderboardModel>("/leaderboard/Practice");

@@ -10,7 +10,7 @@ export default function Page() {
       <br></br>
       <h4 className="font-bold text-neutral">Expectations of Behaviour</h4>
       <p>
-      At MCCade Games, we foster a community where collaboration and healthy competition thrive. We emphasize the importance of positive interactions, 
+      At Scala, we foster a community where collaboration and healthy competition thrive. We emphasize the importance of positive interactions, 
       urging players to engage in cooperative and competitive endeavors without disrespecting or abusing others. In essence, our golden rule is simple: 
       respect every player. These guidelines are diligently enforced to uphold a welcoming and secure environment for all participants, ensuring that everyone 
       can enjoy their experience on the server free from any form of disrespect or harassment. Your adherence to these principles contributes to the creation 
@@ -36,10 +36,10 @@ export default function Page() {
       <br></br>
       <h4 className="font-bold text-neutral">Player Safety & Account Security</h4>
       <p>
-      Every MCCade player holds sole responsibility for the security of their accounts and personal information. It is crucial for players to be vigilant 
+      Every Scala player holds sole responsibility for the security of their accounts and personal information. It is crucial for players to be vigilant 
       and take full ownership of any activities that transpire on their accounts. As a precautionary measure, we strongly advise against sharing any account 
       or personal details with others. By adhering to this practice, players contribute to maintaining the integrity and security of their gaming experience. 
-      We emphasize the significance of safeguarding your account, ensuring a safe and enjoyable environment for all MCCade participants. Your commitment to 
+      We emphasize the significance of safeguarding your account, ensuring a safe and enjoyable environment for all Scala participants. Your commitment to 
       responsible account management is key to a positive gaming community.
       </p>
       <br></br>
@@ -60,7 +60,7 @@ export default function Page() {
       <br></br>
       <h4 className="font-bold text-neutral">Consequences</h4>
       <p>
-      Players found breaking these rules can expect a suspension of chat privileges or access to the MCCade Live Server and Discord. 
+      Players found breaking these rules can expect a suspension of chat privileges or access to the Scala Live Server and Discord. 
       Our rules are here to maintain a welcoming and safe environment for all players. 
       </p>
       <br></br>

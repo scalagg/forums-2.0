@@ -9,8 +9,8 @@ export default function Page() {
       </p>
       <div className="flex flex-col md:gap-y-4 mt-10">
         <p>
-          This Privacy Policy describes how MCCade Games and LunarLabs (“<b>MCCade</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) collects, uses, and shares information about you as well as your rights and choices about
-          such use and sharing, and applies to your use of the MCCade Java Edition as well as any online service location that posts a link to this
+          This Privacy Policy describes how Scala and LunarLabs (“<b>Scala</b>,” “<b>we</b>,” “<b>our</b>,” or “<b>us</b>”) collects, uses, and shares information about you as well as your rights and choices about
+          such use and sharing, and applies to your use of the Scala Java Edition as well as any online service location that posts a link to this
           Privacy Policy, including our website and forum, and all features, content, and other services that we own, control, and make available through such online service location
           (collectively, the “<b>Service</b>”). This Privacy Policy does not apply to our information collection activities outside of the Service (unless otherwise stated below or at the time of collection).
         </p>
@@ -178,7 +178,7 @@ export default function Page() {
         <p></p>
         <ul className="list-disc list-inside">
           <li> Data brokers from which we purchase demographic data to supplement the data we collect.</li>
-          <li> Social networks when you reference our Service or grant permission to MCCade to access your data on one or more of these services.</li>
+          <li> Social networks when you reference our Service or grant permission to Scala to access your data on one or more of these services.</li>
           <li> Partners with which we offer co-branded services, sell or distribute our products, or engage in joint marketing activities.</li>
           <li> Publicly-available sources such as open government databases or other data in the public domain.</li>
         </ul>
@@ -195,7 +195,7 @@ export default function Page() {
           <li>Prevent and address fraud, breach of policies or terms, and threats or harm. </li>
           <li>Monitor and analyse trends, usage, and activities.</li>
           <li>Conduct research, including focus groups and surveys.</li>
-          <li>Improve the Service or other MCCade websites, apps, marketing efforts, products and services.</li>
+          <li>Improve the Service or other Scala websites, apps, marketing efforts, products and services.</li>
         </ul>
         <p>
           We also use information about you with your consent, including to:
@@ -272,7 +272,7 @@ export default function Page() {
           include the following:</p>
         <ul className="list-disc list-inside">
           <li><b>Liking, Sharing, and Logging-In.</b> We may embed a pixel or SDK on our Service that allows you to “like” or “share” content on, or
-            log-in to your MCCade account through, Third Party Services, including social networks such as Facebook and Twitter. If you choose to engage
+            log-in to your Scala account through, Third Party Services, including social networks such as Facebook and Twitter. If you choose to engage
             with such a Third Party Service through our Service, we may collect any information you have authorized the Third Party Service to share with us
             (such as your user ID, billing information, public profile information, e-mail address, birthday, friends list, and other account and profile data).
             Likewise, if you choose to engage with such a Third Party Service through our Service or visit our Service while logged in to that Third Party
@@ -280,7 +280,7 @@ export default function Page() {
             information with information the Third Party Service already has about you. </li>
           <li><b>Brand Pages and Chatbots</b>We may offer our content on social networks such as a Facebook and Twitter. Any information you provide to us
             when you engage with our content (such as through our brand page or via our chatbot on Facebook Messenger) is treated in accordance with this
-            Privacy Policy. Also, if you publicly reference our Service on a Third Party Service (e.g., by using a hashtag associated with MCCade in a tweet
+            Privacy Policy. Also, if you publicly reference our Service on a Third Party Service (e.g., by using a hashtag associated with Scala in a tweet
             or post), we may use your reference on or in connection with our Service.</li>
         </ul>
         <h5 className="font-bold text-neutral">C. Analytics and Interest-Based Advertising</h5>
@@ -372,7 +372,7 @@ export default function Page() {
             <li><b>Emails.</b>You can opt-out of receiving promotional e-mails from us at any time by following the instructions as provided in e-mails 
           to click on the unsubscribe link, or e-mailing us at the e-mail address set forth in the section entitled “Contact Us” below with the word 
           UNSUBSCRIBE in the subject field of the e-mail. Please note that you cannot opt-out of non-promotional e-mails, such as those about 
-          your account, transactions, servicing, or MCCade’s ongoing business relations.</li>
+          your account, transactions, servicing, or Scala’s ongoing business relations.</li>
             <li><b>Push Notifications.</b>If you have opted-in to receive push notification on your device, you can opt-out at any time by adjusting the 
             permissions in your device or uninstalling our app.</li>
           </ul>
@@ -385,11 +385,11 @@ export default function Page() {
             permit California customers to opt in to, or opt out of, this type of sharing.
           </p>
           <br></br>
-          <p>MCCade may share personal information as defined by California’s 'Shine the Light' law with third parties and/or affiliates for 
+          <p>Scala may share personal information as defined by California’s 'Shine the Light' law with third parties and/or affiliates for 
             such third parties’ and affiliates’ own direct marketing purposes. If you are a California resident and wish to obtain information 
             about our compliance with this law, please contact us as set forth in the section entitled 'Contact Us' below. Requests must include 
             'California Privacy Rights Request' in the first line of the description and include your name, street address, city, state, and ZIP 
-            code. Please note that MCCade is not required to respond to requests made by means other than through the provided e-mail address or 
+            code. Please note that Scala is not required to respond to requests made by means other than through the provided e-mail address or 
             mail address.
           </p>
           <br></br>
@@ -402,8 +402,8 @@ export default function Page() {
           <h4 className="font-bold text-neutral">9. Children.</h4>
           <br></br>
           <p>The Service is intended for a general audience and not directed to children under thirteen (13) years of age.
-             MCCade does not knowingly collect personal information as defined by the U.S. Children’s Privacy Protection Act 
-             (“<b>COPPA</b>”) in a manner that is not permitted by COPPA. If you are a parent or guardian and believe MCCade has collected such information in a 
+             Scala does not knowingly collect personal information as defined by the U.S. Children’s Privacy Protection Act 
+             (“<b>COPPA</b>”) in a manner that is not permitted by COPPA. If you are a parent or guardian and believe Scala has collected such information in a 
              manner not permitted by COPPA, please contact us as set forth in the section entitled “Contact Us” below, and we will remove such data to 
              the extent required by COPPA.
           </p>

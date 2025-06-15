@@ -1,27 +1,41 @@
-import { getUuid } from "@/services/forum/account/AccountService";
-import { getSkywarsStats } from "@/services/forum/stats/GameStatsService";
-import StatsWidget from "./StatsWidget";
-import { SKYWARS_NICENAME } from "@/libs/types/entities/SkywarsStats";
+import { getPracticeLeaderboard } from "@/services/forum/stats/GameStatsService";
+import Image from "next/image";
+import Link from "next/link";
 
-interface Params {
-  params: {
-    username: string
-  }
-}
+export default async function PracticeLeaderboardPage() {
+  const [leaderboard, status, error] = await getPracticeLeaderboard();
+  if (!leaderboard) return <div>Error loading leaderboard</div>;
 
-export default async function Page(parameters: Params) {
-  const { params: { username } } = parameters;
-  const uuid = await getUuid(username);
+  // Get all stat categories (e.g., ELO, etc.)
+  const categories = Object.keys(leaderboard.entries);
 
-  const skywarsStats = (await getSkywarsStats(uuid))[0]!;
-  const skywarsStatsArr = Object.keys(skywarsStats).reduce<string[]>(
-    (acc, key) => 
-      { acc.push(`${(SKYWARS_NICENAME as any)[key]}: ${(skywarsStats as any)[key]}`); return acc }, 
-    []);
-
-  return <div className="flex flex-row flex-wrap gap-5 justify-center">
-    <StatsWidget title="Skywars" entries={skywarsStatsArr} backgroundImage={"/img/skywars-bg.webp"} />
-    <StatsWidget title="Bedwars" entries={["No Data"]} backgroundImage={"/img/skywars-bg.webp"} />
-    <StatsWidget title="Duels" entries={["No Data"]} backgroundImage={"/img/skywars-bg.webp"} />
-  </div>;
+  return (
+    <div className="flex flex-col gap-8">
+      <h1 className="text-2xl font-bold text-center">Practice Leaderboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {categories.map((category) => (
+          <div key={category} className="card bg-base-200 p-4 rounded-lg">
+            <h2 className="text-xl font-semibold mb-2">{category}</h2>
+            <ul>
+              {leaderboard.entries[category].map((entry, idx) => (
+                <li key={entry.uuid} className="flex items-center gap-3 mb-2">
+                  <span className="w-6 text-right">{idx + 1}.</span>
+                  <Image
+                    src={`https://skins.mcstats.com/skull/${entry.uuid}`}
+                    alt={entry.resolvedName}
+                    width={32}
+                    height={32}
+                  />
+                  <Link href={`/u/${entry.resolvedName}`}>
+                    <span style={{ color: entry.webColor }} className="font-bold">{entry.resolvedName}</span>
+                  </Link>
+                  <span className="ml-auto">{entry.value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

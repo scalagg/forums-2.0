@@ -60,7 +60,7 @@ export default async function Page() {
             <Bullet color={headlineColor} />
             <h6 className="mb-0.5 uppercase font-bold tracking-wider">{headline}</h6>
           </div>
-          <ClipboardTooltip toCopy="mccade.net">
+          <ClipboardTooltip toCopy="scala.gg">
             <MCServerWidget className="flex-[1_0_min-content]" />
           </ClipboardTooltip>
         </div>

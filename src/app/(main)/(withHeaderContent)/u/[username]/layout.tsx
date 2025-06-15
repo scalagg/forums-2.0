@@ -48,15 +48,17 @@ export default async function Layout({ children: children }: UserParams) {
     const [rank] = await GetRank(grant.rankId);
     if (rank) userRanks.push(rank);
   }
-  const rank = userRanks.reduce((r, h) => r?.priority > h?.priority ? r : h, { priority: -1 } as Rank);
-  const rankColor = await getRankColor(rank?._id) || "#FFFFFF";
+  const highestRank = userRanks.reduce((r, h) => r?.priority > h?.priority ? r : h, { priority: -1 } as Rank);
+  const rankColor = highestRank && highestRank._id ? (await getRankColor(highestRank._id)) : "#FFFFFF";
 
   const server = await getCurrentServer(uuid);
   let status = server ? "online" : "offline";
   let dateJoined;
   let lastSeenOn;
 
-  if (profile.logins.length == 0) {
+
+  // TODO: Find a way to get sessions from mongo or something
+  if (!Array.isArray(profile.logins) || profile.logins.length === 0) {
     dateJoined = "N/A";
     lastSeenOn = "N/A";
   } else {
@@ -113,11 +115,44 @@ export default async function Layout({ children: children }: UserParams) {
 
   const friendNum = friends.length;
 
-  const socialUrls = (await GetPublicConnections(uuid))[0]!;
-  const twitter = socialUrls.twitter;
-  const instagram = socialUrls.instagram;
-  const youtube = socialUrls.youtube;
-  const discord = socialUrls.discord;
+  // Helper functions for social icons and colors
+  function getSocialIcon(type: string) {
+    switch (type) {
+      case "twitter": return "fab fa-twitter";
+      case "discord": return "fab fa-discord";
+      case "youtube": return "fab fa-youtube";
+      case "instagram": return "fab fa-instagram";
+      default: return "fas fa-link";
+    }
+  }
+  function getSocialColor(type: string) {
+    switch (type) {
+      case "twitter": return "#1da1f2";
+      case "discord": return "#7289da";
+      case "youtube": return "#ff0000";
+      case "instagram": return "#e1306c";
+      default: return "#888";
+    }
+  }
+  function getSocialUrl(type: string, value: string) {
+    switch (type) {
+      case "twitter": return `https://twitter.com/${value}`;
+      case "youtube": return `https://youtube.com/${value}`;
+      case "instagram": return `https://instagram.com/${value}`;
+      default: return null;
+    }
+  }
+
+  // Extract socials from the profile's AccountProfile.social field
+  const knownSocials = ["twitter", "discord", "github", "youtube", "instagram"];
+  const socialObj = (profile as any)?.profile?.social || {};
+  const socialList = Object.entries(socialObj)
+    .filter(([type, value]) => knownSocials.includes(type) && value && typeof value === 'string' && value.trim() !== "")
+    .map(([type, value]) => ({
+      type,
+      value: value as string,
+      url: getSocialUrl(type, value as string)
+    }));
 
   const headerContent: [string, string] = ["User", `Checkout ${username}'s amazing profile!`];
   return <>
@@ -136,7 +171,7 @@ export default async function Layout({ children: children }: UserParams) {
             <ServerMCBust className="mx-12" username={username} shadowColor={rankColor} />
             <span className="text-center inline-flex flex-col">
               <h5 className="font-bold">{username ?? "Unknown"}</h5>
-              <small style={{ color: rankColor }} className="smaller font-bold uppercase tracking-wider">{rank.name}</small>
+              <small style={{ color: rankColor }} className="smaller font-bold uppercase tracking-wider">{highestRank.name}</small>
             </span>
             <div style={{ backgroundColor: statusColor.b, color: statusColor.f }}
               className="flex w-full py-2 rounded-b-lg border-[1px] border-gray-400">
@@ -149,9 +184,22 @@ export default async function Layout({ children: children }: UserParams) {
             <small>First joined on <b>{dateJoined}</b></small>
             <small>Last seen on <b>{lastSeenOn}</b></small>
           </div>
-          {Object.keys(socialUrls).length > 0
-            ? <SocialConnections discord={discord} twitter={twitter} instagram={instagram} youtube={youtube} />
-            : <></>}
+          {socialList.length > 0 && (
+            <div className="flex flex-row gap-2">
+              {socialList.map((social, idx) => (
+                <a
+                  key={idx}
+                  href={social.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={social.value}
+                  style={{ color: getSocialColor(social.type) }}
+                >
+                  <i className={getSocialIcon(social.type)} />
+                </a>
+              ))}
+            </div>
+          )}
           <div className="flex flex-col text-center rounded-lg overflow-hidden bg-base-200 p-2 py-1 whitespace-nowrap">
             <small
               className="uppercase font-bold smaller mb-2 mt-1">{friendNum} {"friend" + (friendNum === 1 ? '' : 's')}</small>

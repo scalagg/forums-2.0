@@ -78,6 +78,65 @@ interface RawAccount {
     };
 }
 
+// Add new types for profile and friends
+export interface ProfileFriend {
+    uuidA: string;
+    uuidB: string;
+    nameA: string;
+    nameB: string;
+    acceptedAt: number;
+}
+
+export interface ProfileResponse {
+    uniqueId: string;
+    name: string;
+    friends: ProfileFriend[];
+    rank?: {
+        uuid: string;
+        name: string;
+        displayName: string | null;
+        color: string;
+        prefix: string;
+        suffix: string;
+        weight: number;
+    };
+    // TODO: add more
+    // Add other fields as needed
+}
+
+// Add grant types
+export interface Grant {
+    uuid: string;
+    addedAt: number;
+    addedBy: string;
+    addedOn: string;
+    addedReason: string;
+    duration: number;
+    expireDate: string;
+    rankId: string;
+    removedAt: number | null;
+    removedBy: string | null;
+    removedOn: string | null;
+    removedReason: string | null;
+    scopes: string[];
+    target: string;
+    // Web-resolved fields
+    addedByName?: string;
+    addedByWebColor?: string;
+    removerByName?: string;
+    removerByWebColor?: string;
+}
+
+export interface PaginatedGrants {
+    grants: Grant[];
+    currentPage: number;
+    pageCount: number;
+    previousPage: number;
+    nextPage: number;
+    previousPageUrl: string;
+    nextPageUrl: string;
+}
+
 /**
  * Endpoint for retrieving forum threads associated with a player.
  *
@@ -180,15 +239,53 @@ export const Login = interceptSession(async (
   await client.GetAsync(`${baseEndpoint}/login/${data.username}?` + new URLSearchParams({ password: data.password }))
 );
 
+/**
+ * Gets a list of friends for a user from their profile
+ * @param uuid The user's UUID
+ * @param client Optional HTTP client
+ * @returns Array of friend objects containing both users' info
+ */
+export const GetFriends = async (
+    uuid: string,
+    client: HTTPClient = new HTTPClient(process.env.API_URL!)
+): Promise<ProfileFriend[]> => {
+    try {
+        const [profile, status, error] = await client.GetAsync<ProfileResponse>(`/profile/${uuid}`);
+        if (error || !profile) {
+            console.warn(`Failed to fetch friends for ${uuid}:`, error);
+            return [];
+        }
+        return profile.friends || [];
+    } catch (error) {
+        console.error(`Error fetching friends for ${uuid}:`, error);
+        return [];
+    }
+};
 
 /**
-  * Endpoint for retrieving a list of the user's friends
-  * @param uuid The user's UUID
-  * @return An array of the friends' accounts
-  */
-export const GetFriends = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Account[]>(`${baseEndpoint}/friends/${uuid}`);
+ * Gets a friend's account data if they are a forum user
+ * @param friend The friend object from GetFriends
+ * @param client Optional HTTP client
+ * @returns The friend's account data if they exist, null otherwise
+ */
+export const GetFriendAccount = async (
+    friend: ProfileFriend,
+    client: HTTPClient = new HTTPClient(process.env.API_URL!)
+): Promise<Account | null> => {
+    try {
+        // Try to get account for both users in the friendship
+        const [accountA] = await getAccountFromUuid(friend.uuidA, client);
+        if (accountA) return accountA;
 
+        const [accountB] = await getAccountFromUuid(friend.uuidB, client);
+        if (accountB) return accountB;
+
+        return null;
+    } catch (error) {
+        console.error(`Error fetching friend account for ${friend.uuidA}/${friend.uuidB}:`, error);
+        return null;
+    }
+};
 
 /**
   * Endpoint for retrieving all staff users
@@ -261,9 +358,28 @@ export const getUsernameFromUuid = async (uuid: string): Promise<string | null> 
   return username;
 }
 
-export const getCurrentServer = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)): Promise<string | undefined> =>
-  await client.GetAsync<any>(`/profile/server/${uuid}`).then(res => res[0]?.displayName);
-
+/**
+ * Gets a player's current server if they are online
+ * @param uuid The player's UUID
+ * @param client Optional HTTP client
+ * @returns The server name if online, undefined otherwise
+ */
+export const getCurrentServer = async (
+    uuid: string,
+    client: HTTPClient = new HTTPClient(process.env.API_URL!)
+): Promise<string | undefined> => {
+    try {
+        const [onlinePlayers, status, error] = await client.GetAsync<Record<string, string>>('/profile/online');
+        if (error || !onlinePlayers) {
+            console.warn('Failed to fetch online players:', error);
+            return undefined;
+        }
+        return onlinePlayers[uuid] || undefined;
+    } catch (error) {
+        console.error('Error fetching online players:', error);
+        return undefined;
+    }
+};
 
 export const canUseForum = async (uuid: string) => {
   const account = (await getAccountFromUuid(uuid))[0];
@@ -634,3 +750,126 @@ export interface StaffRank {
   color: string;
   members: StaffRankMember[];
 }
+
+/**
+ * Gets a paginated list of grants for a user
+ * @param uuid The user's UUID
+ * @param page Page number (1-based)
+ * @param pageSize Number of items per page
+ * @param client Optional HTTP client
+ * @returns Paginated grants data
+ */
+export const GetGrants = async (
+    uuid: string,
+    page: number = 1,
+    pageSize: number = 10,
+    client: HTTPClient = new HTTPClient(process.env.API_URL!)
+): Promise<PaginatedGrants> => {
+    try {
+        // Match the old site's endpoint structure
+        const [grants, status, error] = await client.GetAsync<Grant[]>(
+            `grant/profile/${uuid}?webResolved=true`
+        );
+
+        if (error) {
+            console.warn(`Failed to fetch grants for ${uuid}:`, error);
+            return {
+                grants: [],
+                currentPage: page,
+                pageCount: 0,
+                previousPage: page,
+                nextPage: page,
+                previousPageUrl: `/u/${uuid}/grants?page=${page - 1}`,
+                nextPageUrl: `/u/${uuid}/grants?page=${page + 1}`
+            };
+        }
+
+        // Handle empty or invalid response
+        if (!grants || !Array.isArray(grants)) {
+            console.warn(`Invalid grants response for ${uuid}:`, grants);
+            return {
+                grants: [],
+                currentPage: page,
+                pageCount: 0,
+                previousPage: page,
+                nextPage: page,
+                previousPageUrl: `/u/${uuid}/grants?page=${page - 1}`,
+                nextPageUrl: `/u/${uuid}/grants?page=${page + 1}`
+            };
+        }
+
+        // Sort grants by addedAt in descending order (newest first)
+        const sortedGrants = [...grants].sort((a, b) => b.addedAt - a.addedAt);
+
+        // Calculate pagination
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedGrants = sortedGrants.slice(startIndex, endIndex);
+        const totalItems = sortedGrants.length;
+        const pageCount = Math.ceil(totalItems / pageSize);
+        const previousPage = Math.max(1, page - 1);
+        const nextPage = Math.min(pageCount, page + 1);
+
+        return {
+            grants: paginatedGrants,
+            currentPage: page,
+            pageCount,
+            previousPage,
+            nextPage,
+            previousPageUrl: `/u/${uuid}/grants?page=${previousPage}`,
+            nextPageUrl: `/u/${uuid}/grants?page=${nextPage}`
+        };
+    } catch (error) {
+        console.error(`Error fetching grants for ${uuid}:`, error);
+        return {
+            grants: [],
+            currentPage: page,
+            pageCount: 0,
+            previousPage: page,
+            nextPage: page,
+            previousPageUrl: `/u/${uuid}/grants?page=${page - 1}`,
+            nextPageUrl: `/u/${uuid}/grants?page=${page + 1}`
+        };
+    }
+};
+
+/**
+ * Helper function to format grant duration
+ * @param grant The grant object
+ * @returns Formatted duration string
+ */
+export const formatGrantDuration = (grant: Grant): string => {
+    if (grant.duration === -1) return 'permanently';
+    if (grant.duration === 0) return 'indefinitely';
+    
+    const days = Math.floor(grant.duration / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((grant.duration % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((grant.duration % (60 * 60 * 1000)) / (60 * 1000));
+    
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    
+    return parts.join(' ');
+};
+
+/**
+ * Helper function to get time ago string for a grant
+ * @param timestamp The timestamp to format
+ * @returns Formatted time ago string
+ */
+export const getGrantTimeAgo = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
+    if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    return 'just now';
+};

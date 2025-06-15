@@ -30,14 +30,14 @@ export default function Page() {
       <br></br>
       <h4 className="font-bold text-neutral">Do not generalize</h4>
       <p>
-      If a Helper does something bad and you want to report it, say "a Helper named John54 is abusing their power". Do not say "MCCade staff are 
+      If a Helper does something bad and you want to report it, say "a Helper named John54 is abusing their power". Do not say "Scala staff are 
       abusing their power". This is extremely offensive to the hard working staff that follow the rules. If you encounter abusive staff members, 
       submit proof through a Support Ticket so that we can make sure the situation is dealt with. This applies to all negative generalization.
       </p>
       <br></br>
       <h4 className="font-bold text-neutral">Be constructive and positive</h4>
       <p>
-      Your goal should always be to make MCCade a better place. If you have some feedback/criticism, you MUST think about how the problem could be 
+      Your goal should always be to make Scala a better place. If you have some feedback/criticism, you MUST think about how the problem could be 
       solved, and post some suggestions on what you think we could do. <b>All criticism MUST be accompanied by constructive suggestions on how it could be 
       fixed/improved.</b> Keep in mind that criticizing an idea is not the same as attacking someone's person. You can be honest and say you don't agree with 
       someone's idea, but just make sure that you're actually offering criticism and not falling into "ad hominem".

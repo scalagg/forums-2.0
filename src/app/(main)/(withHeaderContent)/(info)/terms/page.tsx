@@ -9,18 +9,18 @@ export default function Page() {
       </p>
       <div className="flex flex-col md:gap-y-4 mt-10">
         <p>
-        These Terms of Service ("Terms") govern your use of the services provided by MCCade Games (the "Server", the "Company") through our services. By accessing and/or using our software
+        These Terms of Service ("Terms") govern your use of the services provided by Scala (the "Server", the "Company") through our services. By accessing and/or using our software
          and/or website and the services provided through it (collectively, the "server"), you agree to comply with and be bound by the following terms and conditions of use ("Terms of Service").
            If you do not or have failed to comply with any of our terms and conditions you are prohibited from using or accessing this site and/or the entirety of our services.
         </p>
         <h4 className="font-bold text-neutral">Trademarks and Copyright</h4>
         <p>
         Minecraft content and materials are trademarks and copyrights of Mojang AB or its licensors. All rights reserved. This site is made by PinkCloud Studios and is licensed
-         to MCCade Games and is not affiliated with Mojang AB. Emoji icons provided free by EmojiOne
+         to Scala and is not affiliated with Mojang AB. Emoji icons provided free by EmojiOne
         </p>
         <h4 className="font-bold text-neutral">Registering</h4>
-        <p>By registering to any MCCade services you agree to these terms and conditions:</p>
-        <p>MCCade reserves the right to deny or reject any username.</p>
+        <p>By registering to any Scala services you agree to these terms and conditions:</p>
+        <p>Scala reserves the right to deny or reject any username.</p>
         <h4 className="font-bold text-neutral">Modification of the Terms and Conditions</h4>
         <p>
         We reserve the right to change this terms and conditions from time to time without notice. You acknowledge and agree that it is your responsibility to review this User Agreement 
@@ -40,17 +40,17 @@ export default function Page() {
           <li>
             <h5 className="font-bold text-neutral">Disclaimer</h5>
             <p>
-            The materials on MCCade's web site are provided "as is". MCCade Games makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties, 
+            The materials on Scala's web site are provided "as is". Scala makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties, 
             including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other 
-            violation of rights. Furthermore, MCCade does not warrant or make any representations concerning the accuracy, likely results, or reliability of the use of the materials 
+            violation of rights. Furthermore, Scala does not warrant or make any representations concerning the accuracy, likely results, or reliability of the use of the materials 
             on its Internet web site or otherwise relating to such materials or on any sites linked to this site.  
             </p>
           </li>
           <li>
             <h5 className="font-bold text-neutral">Limitations</h5>
             <p>
-            In no event shall MCCade or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption,) 
-            arising out of the use or inability to use the materials on MCCade's Internet site, even if MCCade or a MCCade authorized representative has been notified orally 
+            In no event shall Scala or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption,) 
+            arising out of the use or inability to use the materials on Scala's Internet site, even if Scala or a Scala authorized representative has been notified orally 
             or in writing of the possibility of such damage. Because some jurisdictions do not allow limitations on implied warranties, or limitations of liability for consequential 
             or incidental damages, these limitations may not apply to you. 
             </p>
@@ -58,28 +58,28 @@ export default function Page() {
           <li>
             <h5 className="font-bold text-neutral">Revisions and Errata</h5>
             <p>
-            The materials appearing on MCCade's web site could include technical, typographical, or photographic errors. MCCade does not warrant that any of the materials on its web 
-            site are accurate, complete, or current. MCCade may make changes to the materials contained on its web site at any time without notice. MCCade does not, however, make any 
+            The materials appearing on Scala's web site could include technical, typographical, or photographic errors. Scala does not warrant that any of the materials on its web 
+            site are accurate, complete, or current. Scala may make changes to the materials contained on its web site at any time without notice. Scala does not, however, make any 
             commitment to update the materials.  
             </p>
           </li>
           <li>
             <h5 className="font-bold text-neutral">Links</h5>
             <p>
-            MCCade has not reviewed all of the sites linked to its Internet web site and is not responsible for the contents of any such linked site. The inclusion of any link does 
-            not imply endorsement by MCCade of the site. Use of any such linked web site is at the user's own risk.  
+            Scala has not reviewed all of the sites linked to its Internet web site and is not responsible for the contents of any such linked site. The inclusion of any link does 
+            not imply endorsement by Scala of the site. Use of any such linked web site is at the user's own risk.  
             </p>
           </li>
           <li>
             <h5 className="font-bold text-neutral">Governing Law</h5>
             <p>
-            Any claim relating to MCCade's web site shall be governed by the laws of Australia without regard to its conflict of law provisions.
+            Any claim relating to Scala's web site shall be governed by the laws of Australia without regard to its conflict of law provisions.
             </p>
           </li>
           <li>
             <h5 className="font-bold text-neutral">Prohibited Actions and Content</h5>
             <p>
-              When using any MCCade service, you agree to not:
+              When using any Scala service, you agree to not:
             </p>
             <ul className="list-disc">
               <li>
@@ -101,7 +101,7 @@ export default function Page() {
               Engage in discriminant content.  
               </li>
               <li>
-              Attempt to circumvent any banishment without the consent of MCCade.
+              Attempt to circumvent any banishment without the consent of Scala.
               </li>
               <li>
               Disrupt communications, see "Disruption of Communications" below.
@@ -111,7 +111,7 @@ export default function Page() {
           <li>
             <h5 className="font-bold text-neutral">Disruption of Communications</h5>
             <p>
-            Disruptive communication is anything that inhibits the clean flow of communication between users on MCCade. 
+            Disruptive communication is anything that inhibits the clean flow of communication between users on Scala. 
             </p>
             <p>
             This includes but is not limited to:
@@ -121,7 +121,7 @@ export default function Page() {
               Flooding: Posting an excessive number of threads or posts is disruptive to communication. Don't do it.
               </li>
               <li>
-              Non-English Communication: MCCade is an English language service. Communication, particularly content viewable by many users, will be conducted in the English 
+              Non-English Communication: Scala is an English language service. Communication, particularly content viewable by many users, will be conducted in the English 
               language. This also means that users will use the English language properly. "Leet speak" and alternating upper/lowercase letters (i.e. "tYpInG lIKe ThIS") 
               are difficult to read and will not be tolerated.
               </li>
@@ -187,10 +187,10 @@ export default function Page() {
         appropriate permissions, to forcibly make you leave the server, permanently or temporarily, with no chance of refund. If you obey the rules, you will never be banned, plain and simple.
         </p>
         <p>
-        By accessing MCCade services, you agree that you will not create content that contains hacking, slander, or malicious game disruption. Youtubers, Streamers, and 
-        Content Creators are encouraged to release videos for monetary purposes so long as it is within the conjunction of MCCade's rules. Any egregious hacking, leaks, 
-        slander, or abusive behavior will not be permitted to use in content recorded on servers and games owned by MCCade Games LLC. For content that violates said rules, you 
-        irrevocably grant MCCade Games, LLC all rights related to any work created and waive all of your own rights, including moral rights, to content that contains cheating or 
+        By accessing Scala services, you agree that you will not create content that contains hacking, slander, or malicious game disruption. Youtubers, Streamers, and 
+        Content Creators are encouraged to release videos for monetary purposes so long as it is within the conjunction of Scala's rules. Any egregious hacking, leaks, 
+        slander, or abusive behavior will not be permitted to use in content recorded on servers and games owned by Scala LLC. For content that violates said rules, you 
+        irrevocably grant Scala, LLC all rights related to any work created and waive all of your own rights, including moral rights, to content that contains cheating or 
         other malicious and disruptive activity and understand that all previous rights you have had in said content are forfeited.  
         </p>
         <h4 className="font-bold text-neutral">Refund Policy</h4>

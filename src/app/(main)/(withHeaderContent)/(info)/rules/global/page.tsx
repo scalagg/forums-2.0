@@ -47,7 +47,7 @@ const Question = (props: { question: string; answer: string }) => (
         />
         <Question
         question="2. Do not spam"
-        answer="Do not participate in “spammy” or “trolling” behaviour that is inherently disruptful to MCCade or other users."
+        answer="Do not participate in “spammy” or “trolling” behaviour that is inherently disruptful to Scala or other users."
         />
         <Question
         question="3. Treat other users with respect"
@@ -58,7 +58,7 @@ const Question = (props: { question: string; answer: string }) => (
         answer="We want to offer users of all ages and backgrounds the opportunity to interact with all users on the network without being exposed to inappropriate content. This includes profanity, slurs, abbreviations, or any other content that is not appropriate for children of all ages."
         />
         <Question
-        question="5. Do not make threats or recommendations of violence or malicious activity towards MCCade or other users, or partake in such activities"
+        question="5. Do not make threats or recommendations of violence or malicious activity towards Scala or other users, or partake in such activities"
         answer="Malicious threats or wishes of harm of any kind towards any user are not permitted, even as a “joke”."
         />
         <Question
@@ -84,11 +84,11 @@ const Question = (props: { question: string; answer: string }) => (
       </p>
       <br></br>
       <p>
-      The rules exist at the discretion of the MCCade Developers, Agents, Administrators, Managers and Owners and may be changed without notice at any time.
+      The rules exist at the discretion of the Scala Developers, Agents, Administrators, Managers and Owners and may be changed without notice at any time.
       </p>
       <br></br>
       <p>
-      Punishments may be enforced outside these specific clearly defined categories if deemed necessary at the direction of the aforementioned MCCade representatives.  
+      Punishments may be enforced outside these specific clearly defined categories if deemed necessary at the direction of the aforementioned Scala representatives.  
       </p>
       </div>
   );

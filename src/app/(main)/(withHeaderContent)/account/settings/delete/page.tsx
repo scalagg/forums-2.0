@@ -10,7 +10,7 @@ export default async function Page() {
   return <>
     <HeaderContext setTo={headerContent} />
     <div className="flex flex-col gap-2 bg-base-200 w-fit rounded-lg p-4">
-      <h2>Are you sure you want to delete your MCCade Account?</h2>
+      <h2>Are you sure you want to delete your Scala Account?</h2>
       <div>Please enter your password to confirm.</div>
       <form className="flex flex-col gap-2">
         <input className="text-lg rounded-lg" type="password" name="pass" placeholder="Password" />

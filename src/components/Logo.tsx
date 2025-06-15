@@ -6,7 +6,7 @@ import Link from "next/link";
 const Logo = (props: { href: Url; className?: string; }) => (
   <Link href={props.href} className={"w-fit h-fit " + (props.className || '')}>
     <div className="header-logo">
-      <Image width={256} height={144} src="/img/logo.png" alt="MCCade" />
+      <Image width={256} height={144} src="/img/logo.png" alt="Scala" />
     </div>
   </Link>
 );

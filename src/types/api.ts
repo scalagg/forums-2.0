@@ -128,6 +128,19 @@ export interface Punishment {
   // TODO: Define if this is still needed
 }
 
+// Leaderboard Types
+export interface LeaderboardEntry {
+  uuid: string;
+  value: string;
+  webColor: string;
+  resolvedName: string;
+}
+
+export interface LeaderboardModel {
+  name: string;
+  entries: Record<string, LeaderboardEntry[]>;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
   data: T;
