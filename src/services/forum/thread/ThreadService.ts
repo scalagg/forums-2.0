@@ -1,96 +1,375 @@
 'use server';
-import HTTPClient from "@/libs/HTTPClient";
-import { isResultError } from "@/libs/Utils";
-import getSession from "@/libs/session/getSession";
-import Thread from "@/libs/types/entities/Thread";
-import { existsSync } from "fs";
-import { rm } from "fs/promises";
 
-/**
-* Retrieve a list of forum threads within a specific forum.
-*
-* @param forumId The ID or name of the forum.
-* @param page    The page number for paginated results (default: 1).
-* @return ResponseEntity with a JSON array containing thread details.
-*/
-// In the API: @GetMapping(path = "/forum/thread/forum/{id}")
-export const GetForumThreads = async (forumId: string, page: number = 1, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Thread[]>(`/forum/thread/forum/${forumId}?page=${page}`);
+import HTTPClient from '@/libs/HTTPClient';
+import type Thread from '@/libs/types/entities/Thread';
+import type { ReplyModel } from '@/libs/types/entities/ReplyModel';
+import type { UUID } from '@/libs/types/UUID';
 
-/**
-* Retrieve details of a specific forum thread.
-*
-* @param id The ID of the thread to be retrieved.
-* @return ResponseEntity with the thread details in JSON format.
-*/
-// In the API: @GetMapping(path = "/forum/thread/{id}")
-export const GetThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Thread>(`/forum/thread/${id}`);
-
-/**
-* Create a new forum thread.
-*
-* @param body (type: { id: string, title: string, body: string, forumId: string, author: string }) The JSON object containing thread details.
-* @return ResponseEntity with the created thread details in JSON format.
-*/
-// In the API: @PostMapping(path = "/forum/thread")
-export const CreateThread = async (id: string, title: string, body: string, forum: string, author: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<Thread>(`/forum/thread`, { id, title, body, forum, author });
-
-/**
-* Edit an existing forum thread.
-*
-* @param body (type: { title?: string, body?: string, pinned?: boolean, locked?: boolean, lastEditedBy?: string, lastEditedAt?: string }) The JSON object containing updated thread details.
-* @param id   The ID of the thread to be edited.
-* @return ResponseEntity with the edited thread details in JSON format.
-*/
-// In the API: @PutMapping(path = "/forum/thread/{id}")
-export const EditThread = async (thread: Thread, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PutAsync<Thread>(`/forum/thread/${thread._id}`, thread);
-
-/**
-* Delete an existing forum thread.
-*
-* @param id The ID of the thread to be deleted.
-* @return ResponseEntity with the deleted thread details in JSON format.
-*/
-// In the API: @DeleteMapping(path = "/forum/thread/{id}")
-export const DeleteThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-  const res = await client.DeleteAsync<Thread>(`/forum/thread/${id}`);
-  const path = `${process.cwd()}/public/img/thread/${id}.jpeg`
-  if (existsSync(path))
-    await rm(path);
-  return res;
+// Define Result type for consistent error handling
+interface Result<T> {
+    success: boolean;
+    data?: T;
+    error?: string;
 }
 
-/**
-* Create a reply within an existing forum thread.
-*
-* @param body (type: { id: string, title: string, body: string, forumId: string, author: string }) The JSON object containing reply details.
-* @param parentId The ID of the parent thread.
-* @return ResponseEntity with the created reply details in JSON format.
-*/
-// In the API: @PostMapping(path = "/forum/thread/{parentId}/reply")
-export const CreateReply = async (id: string, title: string, body: string, forumId: string, author: string, parentId: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<Thread>(`/forum/thread/${parentId}/reply`, { id, title, body, forumId, author });
+// Raw API response types with MongoDB fields
+interface RawThread {
+    _id: string;
+    title: string;
+    body: string;
+    forum: string;
+    forumName: string;
+    author: string;
+    authorName: string;
+    authorWebColor: string;
+    createdAt: number;
+    lastEditedBy?: string;
+    lastEditedAt: number;
+    lastReplyAt: number;
+    pinned: boolean;
+    locked: boolean;
+    parentThreadId?: string;
+    forumPermission?: string;
+    imageUrl: string;
+    seenBy: string[];
+}
 
-/**
-* Delete a reply within a forum thread.
-*
-* @param parentId The ID of the parent thread.
-* @param replyId  The ID of the reply thread to be deleted.
-* @return ResponseEntity with the deleted reply details in JSON format.
-*/
-// In the API: @DeleteMapping(path = "/forum/thread/{parentId}/{id}")
-export const DeleteReply = async (parentId: string, replyId: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-  const currUser = await getSession();
+const baseEndpoint = "/forum/thread";
 
-  // const thread = await GetThread(replyId);
-  // const isError = isResultError(thread);
-  // if (isError) {
-  //   console.error("Error fetching thread: HTTP " + thread[1]);
-  //   return;
-  // }
-  // if (thread[0]!.author == currUser.uuid)
-  await client.DeleteAsync<Thread>(`/forum/thread/${parentId}/${replyId}`)
+// Helper function to create a Thread instance
+function createThreadInstance(data: RawThread): Thread {
+    return {
+        id: data._id,
+        title: data.title,
+        body: data.body,
+        forum: data.forum,
+        forumName: data.forumName,
+        author: data.author as UUID,
+        authorName: data.authorName,
+        authorWebColor: data.authorWebColor,
+        createdAt: data.createdAt,
+        lastEditedBy: data.lastEditedBy as UUID | undefined,
+        lastEditedAt: data.lastEditedAt,
+        lastReplyAt: data.lastReplyAt,
+        pinned: data.pinned,
+        locked: data.locked,
+        parentThreadId: data.parentThreadId,
+        forumPermission: data.forumPermission,
+        imageUrl: data.imageUrl,
+        seenBy: data.seenBy.map(id => id as UUID),
+        // Helper methods will be added by the thread utility functions
+        getLastReply: () => null, // TODO: Implement
+        getReplies: () => [], // TODO: Implement
+        getFormattedForum: () => data.forumName,
+        getLastReplyAgo: () => '', // TODO: Implement
+        getLastEditedAgo: () => '', // TODO: Implement
+        getPostedAgo: () => '', // TODO: Implement
+        canDelete: () => false, // TODO: Implement
+        canEdit: () => false, // TODO: Implement
+        canLock: () => false, // TODO: Implement
+        hasSeen: () => false, // TODO: Implement
+        getContent: () => data.body
+    };
+}
+
+// Thread Management
+export async function getThreadsByForum(
+    client: HTTPClient,
+    params: {
+        forumId: string;
+        page?: number;
+    }
+): Promise<Result<Thread[]>> {
+    try {
+        const [data, status, error] = await client.GetAsync<RawThread[]>(`${baseEndpoint}/forum/${params.forumId}?page=${params.page || 1}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to fetch threads: ${error}`
+            };
+        }
+        return {
+            success: true,
+            data: (data || []).map(createThreadInstance)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch threads'
+        };
+    }
+}
+
+export async function getThread(
+    client: HTTPClient,
+    id: string
+): Promise<Result<Thread>> {
+    try {
+        const [data, status, error] = await client.GetAsync<RawThread>(`${baseEndpoint}/${id}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to fetch thread: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to fetch thread: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createThreadInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch thread'
+        };
+    }
+}
+
+export async function createThread(
+    client: HTTPClient,
+    params: {
+        title: string;
+        body: string;
+        forum: string;
+        author: string;
+    }
+): Promise<Result<Thread>> {
+    try {
+        const [data, status, error] = await client.PostAsync<RawThread>(baseEndpoint, params);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to create thread: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to create thread: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createThreadInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to create thread'
+        };
+    }
+}
+
+export async function updateThread(
+    client: HTTPClient,
+    params: {
+        id: string;
+        title?: string;
+        body?: string;
+    }
+): Promise<Result<Thread>> {
+    try {
+        const [data, status, error] = await client.PostAsync<RawThread>(`${baseEndpoint}/edit`, params);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to update thread: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to update thread: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createThreadInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to update thread'
+        };
+    }
+}
+
+export async function deleteThread(
+    client: HTTPClient,
+    id: string
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/delete`, { id });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to delete thread: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to delete thread'
+        };
+    }
+}
+
+export async function lockThread(
+    client: HTTPClient,
+    threadId: string
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/lock/${threadId}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to lock thread: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to lock thread'
+        };
+    }
+}
+
+export async function pinThread(
+    client: HTTPClient,
+    threadId: string
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/pin/${threadId}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to pin thread: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to pin thread'
+        };
+    }
+}
+
+// Reply Management
+export async function createReply(
+    client: HTTPClient,
+    params: {
+        threadId: string;
+        body: string;
+        author: string;
+    }
+): Promise<Result<ReplyModel>> {
+    try {
+        const [data, status, error] = await client.PostAsync<ReplyModel>(`${baseEndpoint}/${params.threadId}`, {
+            body: params.body,
+            author: params.author
+        });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to create reply: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to create reply: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to create reply'
+        };
+    }
+}
+
+export async function deleteReply(
+    client: HTTPClient,
+    replyId: string
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/delete`, { id: replyId });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to delete reply: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to delete reply'
+        };
+    }
+}
+
+// Backward compatibility exports
+export const GetForumThreads = async (forumId: string, page: number = 1, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await getThreadsByForum(client, { forumId, page });
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [result.data, 200, null] as const;
 };
+
+export const GetThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await getThread(client, id);
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [result.data, 200, null] as const;
+};
+
+export const CreateThread = async (id: string, title: string, body: string, forum: string, author: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await createThread(client, { title, body, forum, author });
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [result.data, 200, null] as const;
+};
+
+export const EditThread = async (thread: Thread, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await updateThread(client, { 
+        id: thread.id, 
+        title: thread.title, 
+        body: thread.body 
+    });
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [result.data, 200, null] as const;
+};
+
+export const DeleteThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await deleteThread(client, id);
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [null, 200, null] as const;
+};
+
+export const DeleteReply = async (parentId: string, replyId: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+    const result = await deleteReply(client, replyId);
+    if (!result.success) {
+        return [null, 500, result.error] as const;
+    }
+    return [null, 200, null] as const;
+}; 

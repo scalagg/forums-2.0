@@ -7,7 +7,7 @@ import { headers } from 'next/headers';
 import HeaderContext from '@/components/HeaderContext';
 import { GetFriends, getCurrentServer, getUsernameFromUuid, getUuid } from '@/services/forum/account/AccountService';
 import { isResultError } from '@/libs/Utils';
-import { GetActiveRanks, getRankColor, getRankFromName } from '@/services/controller/GrantService';
+import { GetActiveRanks, GetRank, getRankColor, getRankFromName } from '@/services/controller/GrantService';
 import { GetProfileFromUuid, GetPublicConnections } from '@/services/controller/ProfileService';
 import { getPunishments } from '@/services/forum/punishment/PunishmentService';
 import SocialConnections from './SocialConnections';
@@ -19,8 +19,15 @@ interface UserParams {
 }
 export default async function Layout({ children: children }: UserParams) {
   const session = await getSession();
-  const sessionRanks = (await GetActiveRanks(session.uuid))[0];
-  const sessionIsStaff = sessionRanks != undefined && sessionRanks.find(rank => rank.staff) != undefined;
+  // Get session ranks from grants
+  const sessionGrants = await GetActiveRanks(session.uuid);
+  const sessionRanks: Rank[] = [];
+  for (const grant of sessionGrants) {
+    const [rank] = await GetRank(grant.rankId);
+    if (rank) sessionRanks.push(rank);
+  }
+  const sessionIsStaff = sessionRanks.some(rank => rank.staff);
+
   const currPath = new URL(headers().get('x-url')!).pathname;
   const username = currPath?.split('/')[2];
   const uuid = await getUuid(username);
@@ -34,10 +41,15 @@ export default async function Layout({ children: children }: UserParams) {
     </>
   }
 
-  const rank = (await GetActiveRanks(uuid))[0]!
-    .reduce((r, h) => r?.priority > h?.priority ? r : h, { priority: -1 } as Rank);
+  // Get user ranks from grants
+  const userGrants = await GetActiveRanks(uuid);
+  const userRanks: Rank[] = [];
+  for (const grant of userGrants) {
+    const [rank] = await GetRank(grant.rankId);
+    if (rank) userRanks.push(rank);
+  }
+  const rank = userRanks.reduce((r, h) => r?.priority > h?.priority ? r : h, { priority: -1 } as Rank);
   const rankColor = await getRankColor(rank?._id) || "#FFFFFF";
-
 
   const server = await getCurrentServer(uuid);
   let status = server ? "online" : "offline";
@@ -92,8 +104,8 @@ export default async function Layout({ children: children }: UserParams) {
     else {
       for (const acc of res0[0]!) {
         friends.push({
-          uuid: acc._id,
-          name: (await getUsernameFromUuid(acc._id))!,
+          uuid: acc.uuid,
+          name: (await getUsernameFromUuid(acc.uuid))!,
         });
       }
     }

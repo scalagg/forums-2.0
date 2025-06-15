@@ -1,44 +1,58 @@
 'use server';
 
-import ForumCategory from '@/libs/types/entities/ForumCategory';
 import HTTPClient from "@/libs/HTTPClient";
+import { ForumCategory } from "@/types/api";
 
-/**
-* Retrieve all forum categories.
-*
-* @return ResponseEntity containing a JsonArray of forum categories in the body.
-*/
-// In the API: @GetMapping(path = "/forum/category")
-export const GetForumCategories = async (client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<ForumCategory[]>(`/forum/category`);
+export default class CategoryService {
+  private readonly client: HTTPClient;
+  private readonly baseEndpoint = "/forum/category";
 
-/**
-* Create a new forum category.
-*
-* @param body (type: { id: string, name: string, weight: number }) The JSON object containing information for creating the new category.
-* @return ResponseEntity containing the created forum category in the body.
-*/
-// In the API: @PostMapping(path = "/forum/category")
-export const CreateForumCategory = async (id: string, name: string, weight: number, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<ForumCategory>(`/forum/category`, { id, name, weight });
+  constructor(client: HTTPClient) {
+    this.client = client;
+  }
 
-/**
-* Update an existing forum category.
-*
-* @param body (type: { name?: string, weight?: int }) The JSON object containing information for updating the category.
-* @param id   The ID of the category to be updated.
-* @return ResponseEntity containing the updated forum category in the body.
-*/
-// In the API: @PutMapping(path = "/forum/category/{id}")
-export const UpdateForumCategory = async (id: string, name?: string, weight?: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-   await client.PostAsync<ForumCategory>(`/forum/category/${id}`, {name, weight});
+  // Active API Methods
+  async getAllCategories(): Promise<ForumCategory[]> {
+    const [categories] = await this.client.GetAsync<ForumCategory[]>(this.baseEndpoint);
+    return categories || [];
+  }
 
-/**
-* Delete an existing forum category.
-*
-* @param id The ID of the category to be deleted.
-* @return ResponseEntity containing the deleted forum category in the body.
-*/
-// In the API: @DeleteMapping(path = "/forum/category/{id}")
-export const DeleteForumCategory = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.DeleteAsync(`/forum/category/${id}`);
+  async createCategory(category: { name: string; weight: number }): Promise<ForumCategory | null> {
+    const [newCategory] = await this.client.PostAsync<ForumCategory>(`${this.baseEndpoint}/create`, category);
+    return newCategory;
+  }
+
+  async updateCategory(id: string, category: { name: string; weight: number }): Promise<ForumCategory | null> {
+    const [updatedCategory] = await this.client.PostAsync<ForumCategory>(`${this.baseEndpoint}/edit/${id}`, category);
+    return updatedCategory;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/delete/${id}`);
+    return status === 200;
+  }
+
+  // Legacy Methods (Kept for backward compatibility)
+  // TODO: Remove these once we fully migrate to the new API
+  /*
+  async getCategories(): Promise<ForumCategory[]> {
+    const [categories] = await this.client.GetAsync<ForumCategory[]>(`/forum/category`);
+    return categories || [];
+  }
+
+  async createCategory(category: { id: string; name: string; weight: number }): Promise<ForumCategory | null> {
+    const [newCategory] = await this.client.PostAsync<ForumCategory>(`/forum/category`, category);
+    return newCategory;
+  }
+
+  async updateCategory(id: string, category: { name: string; weight: number }): Promise<ForumCategory | null> {
+    const [updatedCategory] = await this.client.PostAsync<ForumCategory>(`/forum/category/${id}`, category);
+    return updatedCategory;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    const [, status] = await this.client.DeleteAsync(`/forum/category/${id}`);
+    return status === 200;
+  }
+  */
+}

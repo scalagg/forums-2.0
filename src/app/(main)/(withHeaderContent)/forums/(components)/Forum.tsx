@@ -5,6 +5,9 @@ import Thread from '@/libs/types/entities/Thread';
 import Rank from '@/libs/types/entities/Rank';
 import ThreadInfo from './ThreadInfo';
 import Link from 'next/link';
+import { Thread } from '@/types/api';
+import { toLocaleString, stringToDate } from '@/libs/Utils';
+import { getThreadShortId } from '../Utils';
 
 export interface ActivityData {
   thread: {
@@ -28,32 +31,57 @@ export interface ForumData {
   lastThread?: Thread;
   lastThreadAuthor?: {username: string, rank?: Rank};
 }
-const Forum = async (props: ForumData) => {
-  const {id, name, description, threadAmount, lastThread, lastThreadAuthor} = props;
-  const lastThreadId = lastThread?._id;
 
+interface ForumProps {
+  name: string;
+  description: string;
+  threadCount: number;
+  replyCount: number;
+  lastThread?: Thread;
+  locked: boolean;
+  permission?: string;
+}
+
+export default function Forum({ 
+  name, 
+  description, 
+  threadCount, 
+  replyCount, 
+  lastThread,
+  locked,
+  permission 
+}: ForumProps) {
   return (
-    <TableEntry>
-      <Link href={`/forums/${id}`} className="h-fit w-fit">
-        <small className="flex flex-col items-start text-start text-neutral">
-          {name}
-          <small className="smaller">
-            {description}
-          </small>
-        </small>
-      </Link>
-
-      <small className="flex justify-center text-center">{threadAmount}</small>
-      
-      <span className="h-fit w-fit justify-self-end">
-        {lastThread ?
-          <ThreadInfo id={lastThreadId} forumId={id} threadAuthor={lastThreadAuthor!} title={lastThread.title} createdAt={lastThread.createdAt}/> : (
-            <span className="flex flex-col items-end text-end">
-              <small className="smaller">None.</small>
-            </span>
-        )}
-      </span>
-    </TableEntry>
+    <div className="flex flex-col p-4 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors">
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col">
+          <h3 className="text-lg font-semibold">{name}</h3>
+          <p className="text-sm text-neutral-400">{description}</p>
+        </div>
+        <div className="flex flex-col items-end">
+          <div className="flex gap-4 text-sm text-neutral-400">
+            <span>{threadCount} threads</span>
+            <span>{replyCount} replies</span>
+          </div>
+          {locked && (
+            <span className="text-sm text-red-500">Locked</span>
+          )}
+          {permission && (
+            <span className="text-sm text-yellow-500">Requires permission</span>
+          )}
+        </div>
+      </div>
+      {lastThread && (
+        <div className="mt-2 text-sm text-neutral-400">
+          <span>Latest: </span>
+          <a href={`/forums/${lastThread.forum}/${getThreadShortId(lastThread._id)}`} className="text-blue-400 hover:underline">
+            {lastThread.title}
+          </a>
+          <span className="ml-2">
+            {toLocaleString(stringToDate(lastThread.createdAt))}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
-export default Forum;

@@ -103,25 +103,45 @@ export const getGrants = async (uuid: string, client: HTTPClient = new HTTPClien
 //    }
 //
 
-/**
-* Endpoint to retrieve all active ranks for a player based on their UUID.
-*
-* @param uuid The UUID of the player for whom active ranks are requested.
-* @return ResponseEntity containing a list of active Ranks.
-*/
-// In the API: @GetMapping("/grants/active/ranks/{uuid}")
-export const GetActiveRanks = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Rank[]>(`/grants/active/ranks/${uuid}`);
+export interface Grant {
+  uuid: string;
+  addedAt: number;
+  addedBy: string;
+  addedOn: string;
+  addedReason: string;
+  duration: number;
+  expireDate: string;
+  rankId: string;
+  removedAt: number;
+  removedBy: string;
+  removedOn: string;
+  removedReason: string;
+  scopes: string[];
+  target: string;
+}
+
+// Fetch all grants for a player
+export const GetGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
+  await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
+
+// Helper to get only active ranks (not removed/expired)
+export const GetActiveRanks = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+  const [grants, status, error] = await GetGrants(uuid, client);
+  if (!grants) return [];
+  const now = Date.now();
+  return grants.filter(grant =>
+    (!grant.removedAt || grant.removedAt === 0) &&
+    (!grant.expireDate || new Date(grant.expireDate).getTime() > now)
+  );
+};
 
 export const getHighestRank = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-  const rank = ((await GetActiveRanks(uuid, client))[0] || [])
-    .reduce<Rank>((h, crr) => crr.priority > h.priority ? crr : h, { priority: -1 } as Rank)
-  
-  if (rank.priority == -1)
-    return undefined;
-
-  return rank;
-}
+  const activeRanks = await GetActiveRanks(uuid, client);
+  if (!activeRanks.length) return undefined;
+  // You may need to fetch rank details to get priority/weight
+  // For now, just return the first active rank
+  return activeRanks[0];
+};
 
 export const getRankFromName = async (name: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
   await client.GetAsync<Rank>(`/rank/name/${name}`);

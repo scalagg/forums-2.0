@@ -1,43 +1,44 @@
-
-import { ServerMCHead } from '@/components/Minecraft/Server';
-import HashLink from '@/components/HashLink';
-import Rank from '@/libs/types/entities/Rank';
-import { stringToDate, toLocaleString } from '@/libs/Utils';
+import { toLocaleString, stringToDate } from '@/libs/Utils';
+import { getThreadShortId } from '../Utils';
 import Link from 'next/link';
 
 interface ThreadInfoProps {
-  id?: string
-  forumId?: string;
-  title?: string;
-  createdAt?: string;
-  threadAuthor?: {
-    username?: string;
-    rank?: Rank;
+  id: string;
+  forumId: string;
+  title: string;
+  threadAuthor: {
+    username: string;
+    rank?: {
+      name: string;
+      color: string;
+    };
   };
+  createdAt: string;
 }
-const ThreadInfo = (props: ThreadInfoProps) => {
-  const {id, forumId, title, threadAuthor, createdAt} = props;
 
-  const getRankColor = (r?: string) => ({ // TODO: Properly get rank color
-    Owner: "#9F000C",
-    Developer: "#ff4141"
-  }[r ?? '']) ?? "#ffffff"
-
+export default function ThreadInfo({ 
+  id, 
+  forumId, 
+  title, 
+  threadAuthor, 
+  createdAt 
+}: ThreadInfoProps) {
   return (
-    <small className="flex flex-col items-end text-end">
-      <span className="inline-flex items-center">
-        <span className="flex flex-col">
-          <Link href={`/forums/${forumId}/${id}`} className="text-neutral">"{title}"</Link>
-          <Link href={`/u/${threadAuthor?.username}`}>
-            <span style={{color: getRankColor(threadAuthor?.rank?.name)}}>{threadAuthor?.username}</span>
-          </Link>
-        </span>
-        <Link href={`/u/${threadAuthor?.username}`} className="w-[35px] h-[37px] ml-1 relative">
-          <ServerMCHead shadowColor={getRankColor(threadAuthor?.rank?.name)} className="scale-y-50 scale-x-[-.5] absolute left-[-15px] top-[-18px]" username={threadAuthor?.username} />
+    <div className="flex flex-col items-end text-end">
+      <Link href={`/forums/${forumId}/${id}`} className="text-blue-400 hover:underline">
+        {title}
+      </Link>
+      <div className="flex gap-2 text-sm text-neutral-400">
+        <span>by</span>
+        <Link 
+          href={`/u/${threadAuthor.username}`} 
+          style={{ color: threadAuthor.rank?.color ?? '#ffffff' }}
+        >
+          {threadAuthor.username}
         </Link>
-      </span>
-      <Link href={`/forums/${forumId}/${id}`}><small className="smaller">{toLocaleString(stringToDate(createdAt))}</small></Link>
-    </small>
+        <span>•</span>
+        <span>{toLocaleString(stringToDate(createdAt))}</span>
+      </div>
+    </div>
   );
 }
-export default ThreadInfo;

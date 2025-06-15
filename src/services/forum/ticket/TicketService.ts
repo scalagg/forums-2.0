@@ -1,89 +1,133 @@
 'use server';
 
 import HTTPClient from "@/libs/HTTPClient";
-import Ticket from "@/libs/types/entities/Ticket";
-import TicketReply from "@/libs/types/entities/TicketReply";
+import { Ticket, TicketStatus } from "@/types/api";
 
-/**
-* Create a new forum ticket.
-*
-* @param ticket The Ticket object.
-* @return The created ticket.
-*/
-// In the API: @PostMapping(path = "/forum/ticket")
-export const CreateTicket = async (ticket: Ticket, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<Ticket>("/forum/ticket", ticket);
+export default class TicketService {
+  private readonly client: HTTPClient;
+  private readonly baseEndpoint = "/forum/ticket";
 
-/**
-* Create a new reply to a ticket
-* 
-* @param ticket The Ticket object.
-* @return The created ticket reply.
-*/
-export const CreateReplyTicket = async (ticket: Ticket, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<Ticket>(`/forum/ticket/${ticket.parentTicket}/reply`, ticket);
+  constructor(client: HTTPClient) {
+    this.client = client;
+  }
 
-/**
-* Edit an existing forum ticket.
-*
-* @param ticket The Ticket object.
-* @return The edited ticket.
-*/
-// In the API: @PutMapping(path = "/forum/ticket/{id}")
-export const EditTicket = async (ticket: Ticket, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PutAsync<Ticket>(`/forum/ticket/${ticket._id}`, ticket)
+  // Ticket Management
+  async getTicket(id: string): Promise<Ticket | null> {
+    const [ticket] = await this.client.GetAsync<Ticket>(`${this.baseEndpoint}/${id}`);
+    return ticket;
+  }
 
-/**
-* Get details of a specific forum ticket by its ID.
-*
-* @param id The ID of the ticket to retrieve.
-* @return The ResponseEntity with JSON representation of the ticket.
-*/
-// In the API: @GetMapping(path = "/forum/ticket/{id}")
-export const GetTicket = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Ticket>(`/forum/ticket/${id}`)
+  async getPlayerTickets(uuid: string, page: number = 1): Promise<Ticket[]> {
+    const [tickets] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/player/${uuid}?page=${page}`);
+    return tickets || [];
+  }
 
+  async getStaffTickets(page: number = 1): Promise<Ticket[]> {
+    const [tickets] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/s/all?page=${page}`);
+    return tickets || [];
+  }
 
-/**
-* Get tickets associated with a specific player (UUID).
-*
-* @param uuid The UUID of the player.
-* @param page The page number for paginated results.
-* @return An array of tickets.
-*/
-// In the API: @GetMapping(path = "/forum/ticket/player/{uuid}")
-export const GetPlayerTickets = async (uuid: string, page: number = 1, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Ticket[]>(`/forum/ticket/player/${uuid}?page=${page}`)
+  async getStaffApplications(page: number = 1): Promise<Ticket[]> {
+    const [applications] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/s/all/applications?page=${page}`);
+    return applications || [];
+  }
 
-/**
-* Get all forum tickets (admin view).
-*
-* @return An array of tickets.
-*/
-// makes this /forum/tickets/all, clashing with /forum/ticket/{id} otherwise
-// In the API: @GetMapping(path = "/forum/ticket/admin")
-export const GetAllTickets = async (client: HTTPClient = new HTTPClient(process.env.API_URL!)) => 
-  await client.GetAsync<Ticket[]>(`/forum/ticket/admin`)
+  async getPlayerApplications(uuid: string, page: number = 1): Promise<Ticket[]> {
+    const [applications] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/player/${uuid}/applications?page=${page}`);
+    return applications || [];
+  }
 
-/**
-* Create a reply for a specific ticket.
-*
-* @param ticket The ticket reply to be created.
-* @param parentId  The ID of the parent ticket.
-* @return The created reply.
-*/
-// In the API: @PostMapping(path = "/forum/ticket/{parentId}/reply")
-export const CreateReply = async (ticket: Ticket, parentId: String, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => 
-  await client.PostAsync<Ticket>(`/forum/ticket/${parentId}/reply`, ticket)
+  // Ticket Actions
+  async createTicket(ticket: {
+    title: string;
+    body: string;
+    category: string;
+    author: string;
+  }): Promise<Ticket | null> {
+    const [newTicket] = await this.client.PostAsync<Ticket>(this.baseEndpoint, ticket);
+    return newTicket;
+  }
 
+  async replyToTicket(ticketId: string, reply: {
+    body: string;
+    author: string;
+  }): Promise<Ticket | null> {
+    const [updatedTicket] = await this.client.PostAsync<Ticket>(`${this.baseEndpoint}/${ticketId}/reply`, reply);
+    return updatedTicket;
+  }
 
-export const ArchiveTicket = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<any>(`/forum/ticket/${id}/archive`);
+  async updateTicket(ticketId: string, updates: {
+    status?: TicketStatus;
+    category?: string;
+    title?: string;
+  }): Promise<Ticket | null> {
+    const [updatedTicket] = await this.client.PutAsync<Ticket>(`${this.baseEndpoint}/${ticketId}`, updates);
+    return updatedTicket;
+  }
 
-export const UnarchiveTicket = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<any>(`/forum/ticket/${id}/unarchive`);
+  async archiveTicket(ticketId: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/${ticketId}/archive`);
+    return status === 200;
+  }
 
-export const DeleteTicket = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.DeleteAsync<any>(`/forum/ticket/${id}`);
+  async unarchiveTicket(ticketId: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/${ticketId}/unarchive`);
+    return status === 200;
+  }
+
+  async deleteTicket(ticketId: string): Promise<boolean> {
+    const [, status] = await this.client.DeleteAsync(`${this.baseEndpoint}/${ticketId}`);
+    return status === 200;
+  }
+
+  // Legacy Methods (Kept for backward compatibility)
+  // TODO: Remove these once we fully migrate to the new API
+  /*
+  async getTicket(id: string): Promise<Ticket | null> {
+    const [ticket] = await this.client.GetAsync<Ticket>(`/forum/ticket/${id}`);
+    return ticket;
+  }
+
+  async getPlayerTickets(uuid: string, page: number = 1): Promise<Ticket[]> {
+    const [tickets] = await this.client.GetAsync<Ticket[]>(`/forum/ticket/player/${uuid}?page=${page}`);
+    return tickets || [];
+  }
+
+  async getStaffTickets(): Promise<Ticket[]> {
+    const [tickets] = await this.client.GetAsync<Ticket[]>(`/forum/ticket/admin`);
+    return tickets || [];
+  }
+
+  async createTicket(ticket: Partial<Ticket>): Promise<Ticket | null> {
+    const [newTicket] = await this.client.PostAsync<Ticket>(`/forum/ticket`, ticket);
+    return newTicket;
+  }
+
+  async replyToTicket(parentId: string, ticket: Partial<Ticket>): Promise<Ticket | null> {
+    const [newReply] = await this.client.PostAsync<Ticket>(`/forum/ticket/${parentId}/reply`, ticket);
+    return newReply;
+  }
+
+  async updateTicket(ticket: Ticket): Promise<Ticket | null> {
+    const [updatedTicket] = await this.client.PutAsync<Ticket>(`/forum/ticket/${ticket._id}`, ticket);
+    return updatedTicket;
+  }
+
+  async archiveTicket(id: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`/forum/ticket/${id}/archive`);
+    return status === 200;
+  }
+
+  async unarchiveTicket(id: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`/forum/ticket/${id}/unarchive`);
+    return status === 200;
+  }
+
+  async deleteTicket(id: string): Promise<boolean> {
+    const [, status] = await this.client.DeleteAsync(`/forum/ticket/${id}`);
+    return status === 200;
+  }
+  */
+}
 
 

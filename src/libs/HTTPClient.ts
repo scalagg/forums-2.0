@@ -15,11 +15,14 @@ export default class HTTPClient {
   private cacheLifetime: number; 
 
   constructor(uri: string, headers?: IMap, cacheStrategy: CacheStrategy = "no-store", cacheLifetime = 0) {
+    if (!uri) {
+        console.error("API_URL environment variable is not set. Please create a .env.local file with API_URL=http://localhost:8080");
+        uri = "http://localhost:8080"; // Fallback to localhost for development
+    }
     this.uri = uri;
     this.cachedHeaders = headers ?? {
-      // Set default headers here if necessary
-      "content-type": "application/json",
-      "Authorization": process.env.API_KEY!,
+        "content-type": "application/json",
+        "Authorization": process.env.API_KEY || "development_key", // Fallback for development
     };
     this.cacheStrategy = cacheStrategy;
     this.cacheLifetime = cacheLifetime;
@@ -67,13 +70,16 @@ export default class HTTPClient {
     let client = await this.getClientAsync();
     const httpResponse = await action(client);
 
-    if (!httpResponse) return null;
+    if (!httpResponse) {
+        console.error(`Failed to connect to API at ${this.uri}. Make sure the API server is running.`);
+        return null;
+    }
 
     if (httpResponse.status === 401) { // Unauthorized
-      client = await this.getClientAsync(true);
-      return await action(client);
+        client = await this.getClientAsync(true);
+        return await action(client);
     } else {
-      return httpResponse;
+        return httpResponse;
     }
   }
 

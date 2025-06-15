@@ -1,46 +1,58 @@
 'use server';
 
 import HTTPClient from "@/libs/HTTPClient";
-import Forum from "@/libs/types/entities/Forum";
+import { Forum } from "@/types/api";
 
-/**
-* Get forum details, optionally with threads based on page number.
-*
-* @param id   The ID of the forum.
-* @param page The page number for retrieving threads (default: -1).
-* @return ResponseEntity with forum details or an error message.
-*/
-// In the API: @GetMapping(path = "/forum/forum/{id}")]
-export const GetForum = async (id: string, page: number = -1, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Forum>(`/forum/forum/${id}`);
+export default class ForumService {
+  private readonly client: HTTPClient;
+  private readonly baseEndpoint = "/forum/forum";
 
-/**
-* Create a new forum.
-*
-* @param body (type: { id: string, name: string, description: string, weight: number, locked: boolean, categoryId: string }) The JSON object containing forum details.
-* @return ResponseEntity with the created forum details or an error message.
-*/
-// In the API: @PostMapping(path = "/forum/forum")
-export const CreateForum = async (forumData: Forum, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.PostAsync<Forum>(`/forum/forum`, forumData);
+  constructor(client: HTTPClient) {
+    this.client = client;
+  }
 
-/**
-* Edit an existing forum.
-*
-* @param body (type: { name?: string, description?: string, weight?: number, locked?: boolean }) The JSON object containing updated forum details.
-* @param id   The ID of the forum to be edited.
-* @return ResponseEntity with the edited forum details or an error message.
-*/
-// In the API: @PutMapping(path = "/forum/forum/{id}")
-export const EditForum = async (forum: Forum, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-await client.PutAsync<Forum>(`/forum/forum/${forum._id}`, forum);
+  // Active API Methods
+  async getForum(id: string): Promise<Forum | null> {
+    const [forum] = await this.client.GetAsync<Forum>(`${this.baseEndpoint}/${id}`);
+    return forum;
+  }
 
-/**
-* Delete a forum.
-*
-* @param id The ID of the forum to be deleted.
-* @return ResponseEntity with the deleted forum details or an error message.
-*/
-// In the API: @DeleteMapping(path = "/forum/forum/{id}")
-export const DeleteForum = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.DeleteAsync<Forum>(`/forum/forum/${id}`);
+  async createForum(forumData: { id: string; name: string; description: string; category: string }): Promise<Forum | null> {
+    const [newForum] = await this.client.PostAsync<Forum>(`${this.baseEndpoint}/create/${forumData.id}`, forumData);
+    return newForum;
+  }
+
+  async updateForum(id: string, forum: { name?: string; description?: string; category?: string }): Promise<Forum | null> {
+    const [updatedForum] = await this.client.PostAsync<Forum>(`${this.baseEndpoint}/edit/${id}`, forum);
+    return updatedForum;
+  }
+
+  async deleteForum(id: string): Promise<boolean> {
+    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/delete/${id}`);
+    return status === 200;
+  }
+
+  // Legacy Methods (Kept for backward compatibility)
+  // TODO: Remove these once we fully migrate to the new API
+  /*
+  async getForum(id: string): Promise<Forum | null> {
+    const [forum] = await this.client.GetAsync<Forum>(`/forum/forum/${id}`);
+    return forum;
+  }
+
+  async createForum(forumData: Partial<Forum>): Promise<Forum | null> {
+    const [newForum] = await this.client.PostAsync<Forum>(`/forum/forum`, forumData);
+    return newForum;
+  }
+
+  async updateForum(id: string, forum: Partial<Forum>): Promise<Forum | null> {
+    const [updatedForum] = await this.client.PutAsync<Forum>(`/forum/forum/${id}`, forum);
+    return updatedForum;
+  }
+
+  async deleteForum(id: string): Promise<boolean> {
+    const [, status] = await this.client.DeleteAsync(`/forum/forum/${id}`);
+    return status === 200;
+  }
+  */
+}

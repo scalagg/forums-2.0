@@ -2,9 +2,10 @@
 
 import HTTPClient from "@/libs/HTTPClient";
 import getSession from "@/libs/session/getSession";
-import Account from "@/libs/types/entities/Account";
+import { Account, AccountSettings, AccountProfile } from "@/libs/types/entities/Account";
 import { SessionData } from "@/libs/session/iron";
 import { getPunishments } from "../punishment/PunishmentService";
+import { UUID } from '@/libs/types/UUID';
 
 // Variables
 const baseEndpoint = "/forum/account";
@@ -26,6 +27,56 @@ const interceptSession =
         isLoggedIn: session.isLoggedIn
       }, result[1], result[2]];
     };
+
+// Define Result type since it's not available
+interface Result<T> {
+    success: boolean;
+    data?: T;
+    error?: string;
+}
+
+// Raw API response types with MongoDB fields
+interface RawAccount {
+    _id: string;
+    uuid: string;
+    username: string;
+    email: string;
+    password: string;
+    createdAt: number;
+    lastLoginAt: number;
+    lastSeenAt: number;
+    role: string;
+    permissions: string[];
+    settings: {
+        theme: string;
+        notifications: boolean;
+        emailNotifications: boolean;
+        privacy: {
+            showEmail: boolean;
+            showLocation: boolean;
+            showWebsite: boolean;
+            showSocial: boolean;
+        };
+    };
+    profile: {
+        avatar: string;
+        banner: string;
+        bio: string;
+        location: string;
+        website: string;
+        social: {
+            discord: string;
+            twitter: string;
+            github: string;
+        };
+    };
+    stats: {
+        posts: number;
+        threads: number;
+        reputation: number;
+        thanks: number;
+    };
+}
 
 /**
  * Endpoint for retrieving forum threads associated with a player.
@@ -144,8 +195,28 @@ export const GetFriends = async (uuid: string, client: HTTPClient = new HTTPClie
   *
   * @return An array of objects containing player and rank uuids
   */
-export const getStaffUsers = async (client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<{ playerUuid: string, rankUuid: string }[]>(`/staff/users`);
+export async function getStaffUsers(
+    client: HTTPClient
+): Promise<Result<{ playerUuid: string; rankUuid: string }[]>> {
+    try {
+        const [data, status, error] = await client.GetAsync<{ playerUuid: string; rankUuid: string }[]>("/staff");
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to fetch staff users: ${error}`
+            };
+        }
+        return {
+            success: true,
+            data: data || []
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch staff users'
+        };
+    }
+}
 
 
 export const getAccountFromUuid = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
@@ -209,4 +280,357 @@ export const canUseForum = async (uuid: string) => {
   console.log(punishments);
 
   return true;
+}
+
+// Helper function to create an Account instance
+function createAccountInstance(data: RawAccount): Account {
+    return {
+        id: data._id,
+        uuid: data.uuid as UUID,
+        username: data.username,
+        email: data.email,
+        createdAt: data.createdAt,
+        lastLoginAt: data.lastLoginAt,
+        lastSeenAt: data.lastSeenAt,
+        role: data.role,
+        permissions: data.permissions,
+        settings: data.settings,
+        profile: data.profile,
+        stats: data.stats,
+        // Add any helper methods here
+        getRoleColor(): string {
+            switch (this.role.toLowerCase()) {
+                case 'admin':
+                    return '#ff0000';
+                case 'moderator':
+                    return '#00ff00';
+                case 'vip':
+                    return '#0000ff';
+                default:
+                    return '#808080';
+            }
+        },
+        hasPermission(permission: string): boolean {
+            return this.permissions.includes(permission);
+        },
+        getReputationColor(): string {
+            if (this.stats.reputation >= 1000) return '#ff0000';
+            if (this.stats.reputation >= 500) return '#ffa500';
+            if (this.stats.reputation >= 100) return '#ffff00';
+            return '#808080';
+        }
+    };
+}
+
+// Authentication Methods
+export async function register(
+    client: HTTPClient,
+    params: {
+        username: string;
+        email: string;
+        password: string;
+    }
+): Promise<Result<{ token: string }>> {
+    try {
+        const [data, status, error] = await client.PostAsync<{ token: string }>(`${baseEndpoint}/register`, params);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to register: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to register: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to register'
+        };
+    }
+}
+
+export async function confirmRegistration(
+    client: HTTPClient,
+    token: string
+): Promise<Result<Account>> {
+    try {
+        const [data, status, error] = await client.PostAsync<RawAccount>(`${baseEndpoint}/register/${token}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to confirm registration: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to confirm registration: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createAccountInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to confirm registration'
+        };
+    }
+}
+
+export async function login(
+    client: HTTPClient,
+    params: {
+        username: string;
+        password: string;
+    }
+): Promise<Result<Account>> {
+    try {
+        const [data, status, error] = await client.GetAsync<RawAccount>(`${baseEndpoint}/login/${params.username}?password=${encodeURIComponent(params.password)}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to login: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to login: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createAccountInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to login'
+        };
+    }
+}
+
+// Password Management
+export async function sendPasswordReset(
+    client: HTTPClient,
+    email: string
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/sendResetPassword`, { email });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to send password reset: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to send password reset'
+        };
+    }
+}
+
+export async function resetPassword(
+    client: HTTPClient,
+    params: {
+        token: string;
+        password: string;
+    }
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/resetPassword/${params.token}`, { password: params.password });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to reset password: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to reset password'
+        };
+    }
+}
+
+export async function changePassword(
+    client: HTTPClient,
+    params: {
+        uuid: string;
+        currentPassword: string;
+        newPassword: string;
+    }
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PutAsync(`${baseEndpoint}/password/${params.uuid}`, {
+            currentPassword: params.currentPassword,
+            newPassword: params.newPassword
+        });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to change password: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to change password'
+        };
+    }
+}
+
+// Account Management
+export async function getAccount(
+    client: HTTPClient,
+    uuid: string
+): Promise<Result<Account>> {
+    try {
+        const [data, status, error] = await client.GetAsync<RawAccount>(`${baseEndpoint}/uuid/${uuid}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to fetch account: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to fetch account: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createAccountInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch account'
+        };
+    }
+}
+
+export async function getAccountByEmail(
+    client: HTTPClient,
+    email: string
+): Promise<Result<Account>> {
+    try {
+        const [data, status, error] = await client.GetAsync<RawAccount>(`${baseEndpoint}/email/${email}`);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to fetch account: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to fetch account: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createAccountInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch account'
+        };
+    }
+}
+
+export async function updateSettings(
+    client: HTTPClient,
+    params: {
+        uuid: string;
+        settings: Partial<AccountSettings>;
+    }
+): Promise<Result<Account>> {
+    try {
+        const [data, status, error] = await client.PutAsync<RawAccount>(`${baseEndpoint}/settings/${params.uuid}`, params.settings);
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to update settings: ${error}`
+            };
+        }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to update settings: No data returned'
+            };
+        }
+        return {
+            success: true,
+            data: createAccountInstance(data)
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to update settings'
+        };
+    }
+}
+
+export async function updateEmail(
+    client: HTTPClient,
+    params: {
+        uuid: string;
+        email: string;
+        password: string;
+    }
+): Promise<Result<void>> {
+    try {
+        const [_, status, error] = await client.PutAsync(`${baseEndpoint}/email/${params.uuid}`, {
+            email: params.email,
+            password: params.password
+        });
+        if (error) {
+            return {
+                success: false,
+                error: `Failed to update email: ${error}`
+            };
+        }
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to update email'
+        };
+    }
+}
+
+// Staff Methods
+export async function getStaffList(client: HTTPClient = new HTTPClient(process.env.API_URL!)) {
+  return await client.GetAsync<StaffRank[]>(`/staffList`);
+}
+
+// Types for staff list
+export interface StaffRankMember {
+  name: string;
+  uuid: string;
+}
+export interface StaffRank {
+  uuid: string;
+  name: string;
+  displayName: string | null;
+  weight: number;
+  color: string;
+  members: StaffRankMember[];
 }
