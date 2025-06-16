@@ -1,6 +1,6 @@
 import NavLink from "@/components/NavLink/component";
 import getSession from "@/libs/session/getSession"
-import { GetActiveRanks } from "@/services/controller/GrantService";
+import { GetIsStaff } from "@/services/controller/ProfileService";
 import { headers } from "next/headers";
 import React from "react";
 import "./styles.css"
@@ -12,8 +12,10 @@ export default async function Layout({ children: children }: UserParams) {
   const currPath = new URL(headers().get('x-url')!).pathname;
   const username = currPath?.split('/')[2];
   const session = await getSession();
-  const sessionRanks = (await GetActiveRanks(session.uuid))[0]!;
-  const sessionIsStaff = sessionRanks.find(rank => rank.staff) != undefined;
+
+  const [isStaffResult] = await GetIsStaff(session.uuid);
+  const sessionIsStaff = isStaffResult?.isStaff === true;
+
   if (!sessionIsStaff) {
     return <>Forbidden</>;
   }

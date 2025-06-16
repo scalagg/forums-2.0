@@ -40,3 +40,6 @@ export const GetPublicConnections = async (uuid: string, client: HTTPClient = ne
 
 export const updateConnections = async (uuid: string, body: any, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
   await client.PutAsync<any>(`/profile/connections/${uuid}`, body)
+
+export const GetIsStaff = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
+  await client.GetAsync<{ isStaff: boolean }>(`/profile/${uuid}/isStaff`);

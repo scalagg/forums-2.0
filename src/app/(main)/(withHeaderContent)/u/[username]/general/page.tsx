@@ -20,10 +20,10 @@ export default async function PracticeLeaderboardPage({ params }: PageProps) {
 
   // Prepare entries for the widget
   const globalEntries = Object.entries(globalStats).map(
-    ([key, value]) => `${key}: ${value}`
+    ([key, value]) => ({ label: key, value })
   );
   const rankedEntries = Object.entries(rankedStats).map(
-    ([kit, stats]) => `${kit}: ELO ${stats.elo ?? 'N/A'}`
+    ([kit, stats]) => ({ label: kit, value: `ELO ${stats.elo ?? 'N/A'}` })
   );
 
   return (
@@ -33,11 +33,6 @@ export default async function PracticeLeaderboardPage({ params }: PageProps) {
         <StatsWidget
           title="Global Stats"
           entries={globalEntries}
-          backgroundImage="/img/practice-bg.webp"
-        />
-        <StatsWidget
-          title="Ranked Stats (ELO)"
-          entries={rankedEntries}
           backgroundImage="/img/practice-bg.webp"
         />
       </div>
