@@ -4,6 +4,7 @@ import NewsWidget from '@/components/NewsWidget/component'
 import MCServerWidget from '@/components/Minecraft/MCServerWidget/component'
 import getSession from '@/libs/session/getSession';
 import { getHighestRank } from '@/services/controller/GrantService';
+import { GetRank } from '@/services/controller/GrantService';
 import { getEntry } from '@/services/forum/websiteData/WebsiteDataService';
 import Bullet from './Bullet';
 import ClipboardTooltip from '@/components/ClipboardTooltip/ClipboardTooltip';
@@ -16,7 +17,12 @@ import DOMPurify from 'isomorphic-dompurify';
 
 export default async function Page() {
   const session = await getSession();
-  const isStaff = (await getHighestRank(session.uuid))?.staff || false;
+  const grant = await getHighestRank(session.uuid);
+  let isStaff = false;
+  if (grant) {
+    const [rank] = await GetRank(grant.rankId);
+    isStaff = !!rank?.staff;
+  }
   const headline = await getEntry("headline") || "";
   const headlineColor = await getEntry("headlineColor") || "green"
 
@@ -68,7 +74,7 @@ export default async function Page() {
         <div className="flex flex-wrap gap-6">
           <div className="flex flex-col flex-[1_0_min-content] w-full news-container">
             {mainHighlight
-              ? <NewsWidget className="main" src={`/img/thread/${mainHighlight._id}.jpeg`} useFallback={!existsSync(`${process.cwd()}/public/img/thread/${mainHighlight._id}.jpeg`)} title={mainHighlight.title} href={`/forums/${mainHighlight.forum}/${mainHighlight._id}`}
+              ? <NewsWidget className="main" src={`/img/thread/${mainHighlight.id}.jpeg`} useFallback={!existsSync(`${process.cwd()}/public/img/thread/${mainHighlight.id}.jpeg`)} title={mainHighlight.title} href={`/forums/${mainHighlight.forum}/${mainHighlight.id}`}
                 body={mainHighlight.body.length > 100
                   ? mainHighlight.body.substring(0, 100) + "..."
                   : mainHighlight.body} />
@@ -76,7 +82,7 @@ export default async function Page() {
             <hr className="my-6 mx-auto" />
             <div className="flex flex-row w-fit gap-4">
               {highlights.map((h, i) =>
-                <NewsWidget key={i} src={`/img/thread/${h._id}.jpeg`} title={h.title} useFallback={!existsSync(`${process.cwd()}/public/img/thread/${h._id}.jpeg`)} href={`/forums/${h.forum}/${h._id}`}
+                <NewsWidget key={i} src={`/img/thread/${h.id}.jpeg`} title={h.title} useFallback={!existsSync(`${process.cwd()}/public/img/thread/${h.id}.jpeg`)} href={`/forums/${h.forum}/${h.id}`}
                   body={h.body.length > 100
                     ? h.body.substring(0, 100) + "..."
                     : h.body} />
@@ -84,7 +90,7 @@ export default async function Page() {
             </div>
           </div>
 
-          <DiscordWidget className="flex flex-col flex-[1_0_min-content]" guildId="1265729442551169094" />
+          <DiscordWidget className="flex flex-col flex-[1_0_min-content]" guildId="999774017223409714" />
         </div>
       </div>
     </div>
