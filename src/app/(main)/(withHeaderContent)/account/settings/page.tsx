@@ -11,8 +11,15 @@ export default async function Page() {
   const session = await getSession();
   if (!session.uuid) redirect("/");
 
-  const profile = (await GetProfileFromUuid(session.uuid))[0]!;
-  const account = (await getAccountFromUuid(session.uuid))[0]!;
+  const [profile, status, error] = await GetProfileFromUuid(session.uuid);
+  const [account] = await getAccountFromUuid(session.uuid);
+  const [connections] = await GetPublicConnections(session.uuid);
+  if (profile && connections) (profile as any).webSettings = connections;
+
+  if (!profile) {
+    redirect("/");
+    return null;
+  }
 
   return <>
     <HeaderContext setTo={headerContent} />

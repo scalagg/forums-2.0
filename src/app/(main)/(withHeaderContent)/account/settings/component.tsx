@@ -18,6 +18,10 @@ interface Props {
 export default function SettingsPage(props: Props) {
   const { profile, account } = props;
 
+  // Debug output
+  console.log('SettingsPage profile:', profile);
+  console.log('SettingsPage profile.webSettings:', profile.webSettings);
+
   const [connLoading, setConnLoading] = useState<boolean>(false);
   const [connError, setConnError] = useState<string>("");
 
@@ -28,14 +32,14 @@ export default function SettingsPage(props: Props) {
   const [emailSuccess, setEmailSuccess] = useState<string>("");
   const [emailLoading, setEmailLoading] = useState<boolean>(false);
 
-  const twitter = profile.metadata["TWITTER"];
-  const twitterPrivacy = profile.metadata["TWITTER-privacy"] == "Everyone";
-  const discord = profile.metadata["DISCORD"];
-  const discordPrivacy = profile.metadata["DISCORD-privacy"] == "Everyone";
-  const instagram = profile.metadata["INSTAGRAM"];
-  const instagramPrivacy = profile.metadata["INSTAGRAM-privacy"] == "Everyone";
-  const youtube = profile.metadata["YOUTUBE"];
-  const youtubePrivacy = profile.metadata["YOUTUBE-privacy"] == "Everyone";
+  const twitter = profile.webSettings?.Twitter || "";
+  const twitterPrivacy = profile.webSettings?.TwitterPrivacy === "Everyone";
+  const discord = profile.webSettings?.Discord || "";
+  const discordPrivacy = profile.webSettings?.DiscordPrivacy === "Everyone";
+  const instagram = profile.webSettings?.Instagram || "";
+  const instagramPrivacy = profile.webSettings?.InstagramPrivacy === "Everyone";
+  const youtube = profile.webSettings?.YouTube || "";
+  const youtubePrivacy = profile.webSettings?.YouTubePrivacy === "Everyone";
 
   function onSubmitConnections(formData: FormData) {
     setConnLoading(true);
@@ -112,35 +116,21 @@ export default function SettingsPage(props: Props) {
             <input className="text-lg w-full rounded-e-md" name="twitter" placeholder="Twitter" defaultValue={twitter} />
           </div>
           <div className="flex flex-row ms-3">
-            <input className="rounded-lg text-lg" type="checkbox" id="twitterPrivacy" name="twitterPrivacy" defaultChecked={twitterPrivacy} />
-            <label htmlFor="twitterPrivacy" className="text-lg">&nbsp;Public</label>
           </div>
           <br />
           <div className="rounded-md bg-base-100 flex flex-row">
             <FaDiscord className="h-6 w-6 mx-2 mt-[6px]" />
             <input className="text-lg w-full rounded-e-md" name="discord" placeholder="Discord" defaultValue={discord} />
           </div>
-          <div className="flex flex-row ms-3">
-            <input className="rounded-lg text-lg" type="checkbox" id="discordPrivacy" name="discordPrivacy" defaultChecked={discordPrivacy} />
-            <label htmlFor="discordPrivacy" className="text-lg">&nbsp;Public</label>
-          </div>
           <br />
           <div className="rounded-md bg-base-100 flex flex-row">
             <FaInstagram className="h-6 w-6 mx-2 mt-[6px]" />
             <input className="text-lg w-full rounded-e-md" name="instagram" placeholder="Instagram" defaultValue={instagram} />
           </div>
-          <div className="flex flex-row ms-3">
-            <input className="rounded-lg text-lg" type="checkbox" id="instagramPrivacy" name="instagramPrivacy" defaultChecked={instagramPrivacy} />
-            <label htmlFor="instagramPrivacy" className="text-lg">&nbsp;Public</label>
-          </div>
           <br />
           <div className="rounded-md bg-base-100 flex flex-row">
             <FaYoutube className="h-6 w-6 mx-2 mt-[6px]" />
             <input className="text-lg w-full rounded-e-md" name="youtube" placeholder="Youtube" defaultValue={youtube} />
-          </div>
-          <div className="flex flex-row ms-3">
-            <input className="rounded-lg text-lg" type="checkbox" id="youtubePrivacy" name="youtubePrivacy" defaultChecked={youtubePrivacy} />
-            <label htmlFor="youtubePrivacy" className="text-lg">&nbsp;Public</label>
           </div>
           {connError ? <div className="py-2 text-red-600 font-bold text-lg">
             {connError}

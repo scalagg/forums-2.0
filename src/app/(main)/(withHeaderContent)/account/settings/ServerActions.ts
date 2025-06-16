@@ -36,14 +36,14 @@ export const updateConnectionsAction = async (formData: FormData) => {
       return "Discord handle cannot exceed 20 characters"
 
     const req = {
-      twitter: formData.get("twitter"),
-      twitterPrivacy: formData.get("twitterPrivacy") === "on" ? "Everyone" : "",
-      discord: formData.get("discord"),
-      discordPrivacy: formData.get("discordPrivacy") === "on" ? "Everyone" : "",
-      instagram: formData.get("instagram"),
-      instagramPrivacy: formData.get("instagramPrivacy") === "on" ? "Everyone" : "",
-      youtube: formData.get("youtube"),
-      youtubePrivacy: formData.get("youtubePrivacy") === "on" ? "Everyone" : "",
+      Twitter: formData.get("twitter"),
+      TwitterPrivacy: formData.get("twitterPrivacy") === "on" ? "Everyone" : "",
+      Discord: formData.get("discord"),
+      DiscordPrivacy: formData.get("discordPrivacy") === "on" ? "Everyone" : "",
+      Instagram: formData.get("instagram"),
+      InstagramPrivacy: formData.get("instagramPrivacy") === "on" ? "Everyone" : "",
+      YouTube: formData.get("youtube"),
+      YouTubePrivacy: formData.get("youtubePrivacy") === "on" ? "Everyone" : "",
     }
 
     await updateConnections(session.uuid, req);
