@@ -1,7 +1,7 @@
 'use server';
 
 import HTTPClient from "@/libs/HTTPClient";
-import Profile from "@/libs/types/entities/Profile";
+import Profile, { ProfileResponse } from "@/libs/types/entities/Profile";
 import ProfileConnections from "@/libs/types/entities/ProfileConnections";
 
 /**
@@ -22,7 +22,7 @@ export const GetAllProfiles = async (client: HTTPClient = new HTTPClient(process
  */
 // In the API: @GetMapping("/profile/{uuid}")
 export const GetProfileFromUuid = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Profile>(`/profile/${uuid}`);
+  await client.GetAsync<Profile>(`/profile/${uuid}?includeWebSettings=true`);
 
 /**
  * Endpoint to retrieve the proxy information for a user based on their UUID.

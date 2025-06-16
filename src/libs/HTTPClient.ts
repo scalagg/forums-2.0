@@ -34,6 +34,7 @@ export default class HTTPClient {
       this.NewHeaders = {
         // update headers if necessary (e.g., tokens n stuff)
         // Don't put anything sensitive, unless explicitly from process.env
+        
       };
     }
 
@@ -89,24 +90,24 @@ export default class HTTPClient {
       return [null, 404, "fetch failed"];
 
     const resBody = await httpResponse.text();
-    // if (process.env.NODE_ENV == "development") {
-    //   console.log("request route: " + route);
-    //   console.log("response body:\n" + resBody);
-    // }
-
     if (isVoid)
       return [null, httpResponse.status, null];
 
     let json;
     try {
-      json = JSON.parse(resBody);
+      // Only try to parse if we have a non-empty response
+      json = resBody ? JSON.parse(resBody) : null;
     } catch (err) {
       const message = `Error processing request ${route} -> ${err}`;
-      console.log(message);
+      console.error(message);
       return [null, httpResponse.status || 500, message];
     }
-    if (!httpResponse.ok)
-      return [null, httpResponse.status, json.message];
+
+    // For non-2xx responses, return the error message from the JSON if available
+    if (!httpResponse.ok) {
+      const errorMessage = json?.error || json?.message || httpResponse.statusText;
+      return [null, httpResponse.status, errorMessage];
+    }
     
     return [json as T, httpResponse.status, null];
   }

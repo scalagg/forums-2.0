@@ -29,25 +29,32 @@ export default async function Layout({ children: children }: UserParams) {
   }
   const sessionIsStaff = sessionRanks.some(rank => rank.staff);
 
+  // Debug output for troubleshooting
   const currPath = new URL(headers().get('x-url')!).pathname;
   const username = currPath?.split('/')[2];
-  if (username && username.match(/^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12}$/)) {
-    const profileByUuid = (await GetProfileFromUuid(username))[0];
-    const realUsername = profileByUuid?.name;
-    if (realUsername && realUsername !== username) {
-      redirect(`/u/${realUsername}`);
-      return null;
-    }
-  }
+  console.log('username param:', username);
   const uuid = await getUuid(username);
+  console.log('uuid from getUuid:', uuid);
+  const [profile, profileStatus, profileError] = await GetProfileFromUuid(uuid);
+  console.log('profile:', profile);
+  console.log('profileStatus:', profileStatus);
+  console.log('profileError:', profileError);
 
-  const profile = (await GetProfileFromUuid(uuid))[0]!;
-
+  // If the profile is not found, show not found message
   if (!profile) {
     return <>
       <HeaderContext setTo={["User", "User not found"]} />
       <h1 className="mt-4 text-xxl font-bold text-white">User not found</h1>
-    </>
+    </>;
+  }
+
+  // If the username is a UUID, redirect to the real username if needed
+  if (username && username.match(/^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12}$/)) {
+    const realUsername = profile.name;
+    if (realUsername && realUsername !== username) {
+      redirect(`/u/${realUsername}`);
+      return null;
+    }
   }
 
   // Get user ranks from grants
@@ -61,7 +68,7 @@ export default async function Layout({ children: children }: UserParams) {
   const rankColor = highestRank && highestRank._id ? (await getRankColor(highestRank._id)) : "#FFFFFF";
 
   const server = await getCurrentServer(uuid);
-  let status = server ? "online" : "offline";
+  let userStatus = server ? "online" : "offline";
 
   const firstConnectionRaw = profile.metadata?.["first-connection"];
   const lastConnectionRaw = profile.metadata?.["last-connection"];
@@ -84,9 +91,9 @@ export default async function Layout({ children: children }: UserParams) {
   let punishments = (await getPunishments(uuid))[0] || [];
 
   if (punishments.find(p => p.punishmentType == "BLACKLIST" && p.active))
-    status = "blacklisted"
+    userStatus = "blacklisted"
   else if (punishments.find(p => p.punishmentType == "BAN" && p.active))
-    status = "banned"
+    userStatus = "banned"
 
   const statusColor: { f: string, b: string } = {
     online: {
@@ -105,7 +112,7 @@ export default async function Layout({ children: children }: UserParams) {
       b: "#120000",
       f: "#FF4A4A",
     }
-  }[status] ?? { f: "#000000", b: "#696969" };
+  }[userStatus] ?? { f: "#000000", b: "#696969" };
 
   let friends: { uuid: string, name: string }[] = [];
 
@@ -134,7 +141,9 @@ export default async function Layout({ children: children }: UserParams) {
       case "twitter": return "fab fa-twitter";
       case "discord": return "fab fa-discord";
       case "youtube": return "fab fa-youtube";
-      case "instagram": return "fab fa-instagram";
+      case "telegram": return "fab fa-telegram";
+      case "twitch": return "fab fa-twitch";
+      case "github": return "fab fa-github";
       default: return "fas fa-link";
     }
   }
@@ -143,7 +152,9 @@ export default async function Layout({ children: children }: UserParams) {
       case "twitter": return "#1da1f2";
       case "discord": return "#7289da";
       case "youtube": return "#ff0000";
-      case "instagram": return "#e1306c";
+      case "telegram": return "#0088cc";
+      case "twitch": return "#9146ff";
+      case "github": return "#333333";
       default: return "#888";
     }
   }
@@ -151,24 +162,50 @@ export default async function Layout({ children: children }: UserParams) {
     switch (type) {
       case "twitter": return `https://twitter.com/${value}`;
       case "youtube": return `https://youtube.com/${value}`;
-      case "instagram": return `https://instagram.com/${value}`;
+      case "telegram": return `https://t.me/${value}`;
+      case "twitch": return `https://twitch.tv/${value}`;
+      case "github": return `https://github.com/${value}`;
+      case "discord": return null; // Discord doesn't have a direct profile URL
       default: return null;
     }
   }
 
-  // Extract socials from the profile's AccountProfile.social field
-  const knownSocials = ["twitter", "discord", "github", "youtube", "instagram"];
-  const socialObj = (profile as any)?.profile?.social || {};
-  const socialList = Object.entries(socialObj)
-    .filter(([type, value]) => knownSocials.includes(type) && value && typeof value === 'string' && value.trim() !== "")
+  // Fetch social connections separately
+  const [connections, connectionsStatus, connectionsError] = await GetPublicConnections(uuid);
+  const socialConnections = connections || {};
+
+  // Extract socials from socialConnections
+  const knownSocials = ["Twitter", "Discord", "GitHub", "YouTube", "Telegram", "Twitch"];
+  const socialList = Object.entries(socialConnections)
+    .filter(([type, value]) => 
+      knownSocials.includes(type) && 
+      value && 
+      typeof value === 'string' && 
+      value.trim() !== "" && 
+      type !== "null" // Filter out the null key
+    )
     .map(([type, value]) => ({
-      type,
+      type: type.toLowerCase(),
       value: value as string,
-      url: getSocialUrl(type, value as string)
+      url: getSocialUrl(type.toLowerCase(), value as string)
     }));
+
+  // Debug: Render the socialList and socialConnections as JSON in the UI
+  const rawWebSettings = socialConnections;
+  const socialsDebug = (
+    <div style={{ color: 'yellow', background: '#222', padding: 8, margin: 8 }}>
+      <div><b>Debug socialList:</b></div>
+      <pre>{JSON.stringify(socialList, null, 2)}</pre>
+      {socialList.length === 0 && <div>No socials found for this user.</div>}
+      <div style={{marginTop: 8}}><b>Raw webSettings:</b></div>
+      <pre>{JSON.stringify(rawWebSettings, null, 2)}</pre>
+      <div style={{marginTop: 8}}><b>webSettings keys:</b> {Object.keys(rawWebSettings).join(', ')}</div>
+    </div>
+  );
 
   const headerContent: [string, string] = ["User", `Checkout ${username}'s amazing profile!`];
   return <>
+    {socialsDebug}
     <HeaderContext setTo={headerContent} />
     <div className="sect flex w-full h-full justify-center items-center">
       <div className="window flex h-fit w-fit inner p-2 gap-4 bg-base-300 rounded-xl">
@@ -179,7 +216,7 @@ export default async function Layout({ children: children }: UserParams) {
               className="flex w-full py-2 rounded-t-lg border-[1px] border-gray-400">
               <small
                 style={{ color: statusColor.f }}
-                className="uppercase text-center w-full text-gray-100 tracking-wider font-extrabold">{status}</small>
+                className="uppercase text-center w-full text-gray-100 tracking-wider font-extrabold">{userStatus}</small>
             </div>
             <ServerMCBust className="mx-12" username={username} shadowColor={rankColor} />
             <span className="text-center inline-flex flex-col">

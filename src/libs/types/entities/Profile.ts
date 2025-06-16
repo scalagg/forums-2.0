@@ -42,22 +42,38 @@ export interface Login {
 
 export default interface Profile {
   name: string;
-  _id: string;
-  nameToLowercase: string;
-  permissions: ProfilePermission[];
-  attachmentPermissions: string[];
+  uniqueId: string;
+  nameToLowercase?: string;
+  permissions?: ProfilePermission[];
+  attachmentPermissions?: string[];
   ignoring: string[];
-  cooldowns: Cooldown[];
-  alts: string[];
-  notes: Note[];
-  currentAddress: string;
-  knownAddresses: string[];
-  disguiseData: DisguiseData;
-  tagName: string;
-  authType: string;
-  twoFactor: boolean;
-  logins: Login[];
-  metadata: {[key:string]: string}
+  cooldowns?: Cooldown[];
+  alts?: string[];
+  notes?: Note[];
+  currentAddress?: string;
+  knownAddresses?: string[];
+  disguiseData?: DisguiseData;
+  tagName?: string;
+  authType?: string;
+  twoFactor?: boolean;
+  logins?: Login[];
+  metadata: {[key:string]: any};
+  webSettings?: {
+    [key: string]: string;
+  };
+  activeGrants?: any[];
+  activeBan?: any;
+  activeMute?: any;
+  rank?: any;
+  effectivePermissions?: any;
+  comments?: any[];
+  threads?: any[];
+  badges?: string[];
+  friends?: any[];
+  notifications?: any[];
+  pastIpAddresses?: string[];
+  specificPermissions?: string[];
+  timestamp?: number;
 }
 
 

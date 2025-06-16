@@ -321,6 +321,12 @@ export async function getStaffUsers(
 }
 
 
+/**
+ * Gets an account from a uuid
+ * @param uuid The uuid of the account
+ * @param client The HTTP client
+ * @returns The account
+ */
 export const getAccountFromUuid = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
   await client.GetAsync<Account>(`/forum/account/uuid/${uuid}`);
 
