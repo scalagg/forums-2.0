@@ -18,8 +18,16 @@ export const getRankColor = async (uuid: string, client: HTTPClient = new HTTPCl
   (await client.GetAsync<any>(`/rank/color/${uuid}`))[0]?.color || "#FFFFFF";
 
 
-export const getGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
+export const getGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+  if (!uuid) {
+    if (typeof window !== 'undefined') {
+      console.warn('getGrants called with empty uuid!');
+      console.trace();
+    }
+    return [[], 400, 'UUID is required'];
+  }
+  return await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
+};
 
 ///**
 // * Endpoint to retrieve a single grant by its UUID and convert it to a simplified form for the site.
@@ -103,36 +111,24 @@ export const getGrants = async (uuid: string, client: HTTPClient = new HTTPClien
 //    }
 //
 
-export interface Grant {
-  uuid: string;
-  addedAt: number;
-  addedBy: string;
-  addedOn: string;
-  addedReason: string;
-  duration: number;
-  expireDate: string;
-  rankId: string;
-  removedAt: number;
-  removedBy: string;
-  removedOn: string;
-  removedReason: string;
-  scopes: string[];
-  target: string;
-}
-
 // Fetch all grants for a player
-export const GetGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>
-  await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
+export const GetGrants = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
+  if (!uuid) {
+    if (typeof window !== 'undefined') {
+      console.warn('GetGrants called with empty uuid!');
+      console.trace();
+    }
+    return [[], 400, 'UUID is required'];
+  }
+  return await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
+};
 
 // Helper to get only active ranks (not removed/expired)
 export const GetActiveRanks = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
   const [grants, status, error] = await GetGrants(uuid, client);
-  if (!grants) return [];
-  const now = Date.now();
-  return grants.filter(grant =>
-    (!grant.removedAt || grant.removedAt === 0) &&
-    (!grant.expireDate || new Date(grant.expireDate).getTime() > now)
-  );
+  if (!grants || !Array.isArray(grants)) return [];
+  // Use 'active' field to filter active grants
+  return (grants as Grant[]).filter((grant: Grant) => grant.active === 'true' || grant.permanent === 'true');
 };
 
 export const getHighestRank = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {

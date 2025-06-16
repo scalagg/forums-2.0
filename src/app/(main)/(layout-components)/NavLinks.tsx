@@ -47,6 +47,11 @@ export const UserNav = () => {
   }, [logout]);
 
   const params = new URLSearchParams({ redirect: path })
+  const profileHref = session?.username ? `/u/${session.username}` : "/u";
+  if (typeof window !== 'undefined') {
+    console.log('UserNav: session.username =', session?.username);
+    console.log('UserNav: profileHref =', profileHref);
+  }
   return isLoading ? (
     <ClipLoader color={'#fff'} size={25} />
   ) : <>
@@ -57,7 +62,7 @@ export const UserNav = () => {
           <NavLink href="/auth/register"><small className="font-semibold">Register</small></NavLink>
         </> :
         <>
-          <NavLink className="navlink" href="/u"><small className="font-semibold">Profile</small></NavLink>
+          <NavLink className="navlink" href={profileHref}><small className="font-semibold">Profile</small></NavLink>
           <NavLink className="navlink" href="/account/settings"><small className="font-semibold">Settings</small></NavLink>
           <Link href="" className="navlink" onClick={logoutCall}><small className="font-semibold">Logout</small></Link>
         </>

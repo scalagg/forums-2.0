@@ -13,6 +13,7 @@ import { getPunishments } from '@/services/forum/punishment/PunishmentService';
 import SocialConnections from './SocialConnections';
 import getSession from '@/libs/session/getSession';
 import Rank from '@/libs/types/entities/Rank';
+import { redirect } from "next/navigation";
 
 interface UserParams {
   children: React.ReactNode;
@@ -30,6 +31,14 @@ export default async function Layout({ children: children }: UserParams) {
 
   const currPath = new URL(headers().get('x-url')!).pathname;
   const username = currPath?.split('/')[2];
+  if (username && username.match(/^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12}$/)) {
+    const profileByUuid = (await GetProfileFromUuid(username))[0];
+    const realUsername = profileByUuid?.name;
+    if (realUsername && realUsername !== username) {
+      redirect(`/u/${realUsername}`);
+      return null;
+    }
+  }
   const uuid = await getUuid(username);
 
   const profile = (await GetProfileFromUuid(uuid))[0]!;

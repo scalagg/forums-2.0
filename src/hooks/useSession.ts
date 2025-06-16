@@ -34,7 +34,16 @@ function useSession(): SessionManager {
 
   const register = InterceptSession(Register);
   const reset = InterceptSession(Reset);
-  const login = InterceptSession(Login);
+  const login = useCallback(async (body: any) => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const session = await res.json();
+    setSession(session);
+    return [session, res.status, session.error || null];
+  }, [setSession]);
 
   const logout = useCallback(async () => {
     await fetch("/api/auth", { method: "delete" })
