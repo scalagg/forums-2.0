@@ -14,6 +14,7 @@ import SocialConnections from './SocialConnections';
 import getSession from '@/libs/session/getSession';
 import Rank from '@/libs/types/entities/Rank';
 import { redirect } from "next/navigation";
+import { FaDiscord, FaTwitter, FaYoutube, FaTelegram, FaTwitch, FaGithub } from "react-icons/fa6";
 
 interface UserParams {
   children: React.ReactNode;
@@ -136,15 +137,15 @@ export default async function Layout({ children: children }: UserParams) {
   const friendNum = friends.length;
 
   // Helper functions for social icons and colors
-  function getSocialIcon(type: string) {
+  function getSocialIconComponent(type: string) {
     switch (type) {
-      case "twitter": return "fab fa-twitter";
-      case "discord": return "fab fa-discord";
-      case "youtube": return "fab fa-youtube";
-      case "telegram": return "fab fa-telegram";
-      case "twitch": return "fab fa-twitch";
-      case "github": return "fab fa-github";
-      default: return "fas fa-link";
+      case "twitter": return <FaTwitter className="w-5 h-5 inline-block" />;
+      case "discord": return <FaDiscord className="w-5 h-5 inline-block" />;
+      case "youtube": return <FaYoutube className="w-5 h-5 inline-block" />;
+      case "telegram": return <FaTelegram className="w-5 h-5 inline-block" />;
+      case "twitch": return <FaTwitch className="w-5 h-5 inline-block" />;
+      case "github": return <FaGithub className="w-5 h-5 inline-block" />;
+      default: return <i className="fas fa-link" />;
     }
   }
   function getSocialColor(type: string) {
@@ -190,22 +191,39 @@ export default async function Layout({ children: children }: UserParams) {
       url: getSocialUrl(type.toLowerCase(), value as string)
     }));
 
-  // Debug: Render the socialList and socialConnections as JSON in the UI
-  const rawWebSettings = socialConnections;
-  const socialsDebug = (
-    <div style={{ color: 'yellow', background: '#222', padding: 8, margin: 8 }}>
-      <div><b>Debug socialList:</b></div>
-      <pre>{JSON.stringify(socialList, null, 2)}</pre>
-      {socialList.length === 0 && <div>No socials found for this user.</div>}
-      <div style={{marginTop: 8}}><b>Raw webSettings:</b></div>
-      <pre>{JSON.stringify(rawWebSettings, null, 2)}</pre>
-      <div style={{marginTop: 8}}><b>webSettings keys:</b> {Object.keys(rawWebSettings).join(', ')}</div>
+  // Socials card style rendering
+  const socialsCard = (
+    <div className="flex flex-col text-center rounded-lg overflow-hidden bg-base-200 py-1 px-4 whitespace-nowrap mt-2">
+      <small className="uppercase font-bold smaller mb-1">Social Media</small>
+      <div className="flex flex-col justify-between gap-2 text-left p-1 relative">
+        {socialList.map((social, idx) => {
+          if (social.type === "discord") {
+            return (
+              <div key={idx} className="flex items-center gap-2 text-gray-300">
+                {getSocialIconComponent(social.type)} <span>{social.value}</span>
+              </div>
+            );
+          } else {
+            return (
+              <a
+                key={idx}
+                target="_blank"
+                rel="noopener noreferrer"
+                href={social.url || "#"}
+                className="flex items-center gap-2 hover:underline"
+                style={{ color: getSocialColor(social.type) }}
+              >
+                {getSocialIconComponent(social.type)} <span>{social.type.charAt(0).toUpperCase() + social.type.slice(1)}</span>
+              </a>
+            );
+          }
+        })}
+      </div>
     </div>
   );
 
   const headerContent: [string, string] = ["User", `Checkout ${username}'s amazing profile!`];
   return <>
-    {socialsDebug}
     <HeaderContext setTo={headerContent} />
     <div className="sect flex w-full h-full justify-center items-center">
       <div className="window flex h-fit w-fit inner p-2 gap-4 bg-base-300 rounded-xl">
@@ -234,22 +252,7 @@ export default async function Layout({ children: children }: UserParams) {
             <small>First joined on <b>{dateJoined}</b></small>
             <small>Last seen on <b>{lastSeenOn}</b></small>
           </div>
-          {socialList.length > 0 && (
-            <div className="flex flex-row gap-2">
-              {socialList.map((social, idx) => (
-                <a
-                  key={idx}
-                  href={social.url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={social.value}
-                  style={{ color: getSocialColor(social.type) }}
-                >
-                  <i className={getSocialIcon(social.type)} />
-                </a>
-              ))}
-            </div>
-          )}
+          {socialList.length > 0 && socialsCard}
           <div className="flex flex-col text-center rounded-lg overflow-hidden bg-base-200 p-2 py-1 whitespace-nowrap">
             <small
               className="uppercase font-bold smaller mb-2 mt-1">{friendNum} {"friend" + (friendNum === 1 ? '' : 's')}</small>
