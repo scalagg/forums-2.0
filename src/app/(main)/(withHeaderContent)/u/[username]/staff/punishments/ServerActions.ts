@@ -2,29 +2,24 @@
 
 import { getUsernameFromUuid, getUuid } from "@/services/forum/account/AccountService"
 import { getPunishments } from "@/services/forum/punishment/PunishmentService";
+import Punishment from "@/libs/types/entities/Punishment";
 
 export async function getPunishmentsInfo(username: string) {
   const uuid = (await getUuid(username));
 
-  const punishments = (await getPunishments(uuid))[0] || [];
+  const punishments: Punishment[] = (await getPunishments(uuid))[0] || [];
 
   const uuidToName: { [key: string]: string } = {};
   uuidToName["00000000-0000-0000-0000-000000000000"] = "Server/Console"
 
   for (let p of punishments) {
-    for (let proof of p.proof) {
-      if (!uuidToName[proof.addedBy])
-        uuidToName[proof.addedBy] = (await getUsernameFromUuid(proof.addedBy))!;
-    }
-
-    if (!uuidToName[p.issuedBy])
-      uuidToName[p.issuedBy] = (await getUsernameFromUuid(p.issuedBy))!;
-
-    if (!uuidToName[p.removedBy])
+    if (p.addedBy && !uuidToName[p.addedBy])
+      uuidToName[p.addedBy] = (await getUsernameFromUuid(p.addedBy))!;
+    if (p.removedBy && !uuidToName[p.removedBy])
       uuidToName[p.removedBy] = (await getUsernameFromUuid(p.removedBy))!;
   }
 
-  punishments.sort((a,b) => Number(b.issuedAt) - Number(a.issuedAt));
+  punishments.sort((a, b) => Number(b.addedAt) - Number(a.addedAt));
 
   return {
     uuid: uuid,
