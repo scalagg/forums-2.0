@@ -1,6 +1,7 @@
 'use server'
 
 import Rank from "@/libs/types/entities/Rank";
+import Grant from "@/libs/types/entities/Grant";
 import { GetActiveRanks, GetRank, getGrants, getRankColor, getRankFromName } from "@/services/controller/GrantService";
 import { getUsernameFromUuid, getUuid } from "@/services/forum/account/AccountService";
 
@@ -9,7 +10,10 @@ export async function getPlayerGrantsInfo(username: string) {
   'use server'
 
   const uuid = await getUuid(username);
-  let grants = (await getGrants(uuid))[0] || [];
+  let grantsResult = await getGrants(uuid);
+  let grants: Grant[] = Array.isArray(grantsResult[0]) ? grantsResult[0] : [];
+  console.log("Fetched grants raw:", grantsResult);
+  console.log("Parsed grants:", grants);
 
   const uuidToName: { [key: string]: string } = {};
   const rankIdToRank: { [key: string]: Rank } = {};
@@ -25,6 +29,7 @@ export async function getPlayerGrantsInfo(username: string) {
   const updateRankCache = async (rankId: string) => {
     if (!rankIdToRank[rankId]) {
       const rankRes = await GetRank(rankId);
+      console.log("GetRank for", rankId, "returned", rankRes);
       if (rankRes[0]) {
         rankIdToRank[rankId] = rankRes[0];
         rankIdToColor[rankId] = await getRankColor(rankId);
@@ -33,45 +38,48 @@ export async function getPlayerGrantsInfo(username: string) {
   }
 
   const getUserHighestRank = async (uuid: string) => {
-    const rank = ((await GetActiveRanks(uuid))[0] || [])
-      .reduce((acc, crr) =>
-        crr.priority > acc.priority ? crr : acc,
-        { priority: -1 } as Rank)
-
-    return rank.priority != -1
-      ? rank
-      : null
+    const ranksResult = await GetActiveRanks(uuid);
+    const ranks: Rank[] = Array.isArray(ranksResult[0]) ? ranksResult[0] : [];
+    const rank = ranks.reduce((acc, crr) =>
+      crr.priority > acc.priority ? crr : acc,
+      { priority: -1 } as Rank)
+    return rank.priority != -1 ? rank : null;
   }
 
-  for (let grant of grants) {
-    if (!uuidToName[grant.issuedBy])
-      uuidToName[grant.issuedBy] = (await getUsernameFromUuid(grant.issuedBy))!;
+  // Log each grant's rankId before updating cache
+  await Promise.all(grants.map(grant => {
+    console.log("Grant rankId:", grant.rankId);
+    return updateRankCache(grant.rankId);
+  }));
 
-    if (!uuidToName[grant.removedBy])
+  for (let grant of grants) {
+    if (grant.addedBy && !uuidToName[grant.addedBy])
+      uuidToName[grant.addedBy] = (await getUsernameFromUuid(grant.addedBy))!;
+    if (grant.removedBy && !uuidToName[grant.removedBy])
       uuidToName[grant.removedBy] = (await getUsernameFromUuid(grant.removedBy))!;
 
-    updateRankCache(grant.rankId);
-
-    const issuerRank = await getUserHighestRank(grant.issuedBy)
-    const removerRank = await getUserHighestRank(grant.removedBy)
+    const issuerRank = grant.addedBy ? await getUserHighestRank(grant.addedBy) : null;
+    const removerRank = grant.removedBy ? await getUserHighestRank(grant.removedBy) : null;
     if (issuerRank) {
-      updateRankCache(issuerRank._id);
-      uuidToRank[grant.issuedBy] = issuerRank;
+      await updateRankCache(issuerRank._id);
+      uuidToRank[grant.addedBy!] = issuerRank;
     }
     if (removerRank) {
-      updateRankCache(removerRank._id);
-      uuidToRank[grant.removedBy] = removerRank;
+      await updateRankCache(removerRank._id);
+      uuidToRank[grant.removedBy!] = removerRank;
     }
   }
 
   const targetRank = await getUserHighestRank(uuid);
   if (targetRank) {
-    updateRankCache(targetRank._id);
+    await updateRankCache(targetRank._id);
     uuidToRank[uuid] = targetRank;
   }
 
-  grants.sort((a, b) => Number(b.issuedAt) - Number(a.issuedAt));
+  grants.sort((a, b) => Number(b.addedAt) - Number(a.addedAt));
   grants = grants.filter(g => rankIdToRank[g.rankId]);
+  console.log("Filtered grants:", grants);
+  console.log("rankIdToRank:", rankIdToRank);
 
   return {
     uuid: uuid,

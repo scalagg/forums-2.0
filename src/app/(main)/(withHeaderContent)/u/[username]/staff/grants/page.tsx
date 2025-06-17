@@ -22,6 +22,12 @@ export default function Page(params: Params) {
   const [uuidToRank, setUuidToRank] = useState<{ [key: string]: Rank }>({});
   const [grants, setGrants] = useState<Grant[]>([]);
 
+  const CONSOLE_UUID = "00000000-0000-0000-0000-000000000000";
+  const getDisplayName = (uuid?: string | null) => {
+    if (!uuid || uuid === CONSOLE_UUID) return <span className="text-red-500 font-bold">Console</span>;
+    return uuidToName[uuid] || <span className="text-red-600">Unknown</span>;
+  };
+
   useEffect(() => {
     getPlayerGrantsInfo(username).then(res => {
       const { uuid, uuidToName, rankIdToRank, rankIdToColor, uuidToRank, grants } = res; 
@@ -32,6 +38,7 @@ export default function Page(params: Params) {
       setRankIdToColor(rankIdToColor);
       setUuidToRank(uuidToRank);
       setGrants(grants);
+      console.log("Grants passed to UI:", grants);
     });
   }, [username]);
 
@@ -59,15 +66,15 @@ export default function Page(params: Params) {
     {grants.map((g, i) =>
       <div key={i} className="flex flex-col gap-2 p-3 bg-base-300 rounded-md">
         <h4 className="text-xl font-bold">
-          <span style={{ color: rankIdToColor[uuidToRank[g.issuedBy]._id] }}>
-            {uuidToName[g.issuedBy]}
+          <span style={{ color: rankIdToColor[uuidToRank[g.addedBy ?? "console"]?._id] }}>
+            {getDisplayName(g.addedBy)}
           </span>
           &nbsp;granted&nbsp;
           <span style={{ color: rankIdToColor[g.rankId] }}>
-            {rankIdToRank[g.rankId].name}
+            {rankIdToRank[g.rankId]?.name}
           </span>
           &nbsp;to&nbsp;
-          <span style={{ color: rankIdToColor[uuidToRank[uuid]._id] }}>
+          <span style={{ color: rankIdToColor[uuidToRank[uuid]?._id] }}>
             {username}
           </span>
         </h4>
@@ -79,39 +86,29 @@ export default function Page(params: Params) {
         <div id={`dropdownDiv${i}`} hidden>
           <div className="flex flex-row flex-wrap gap-2">
             <div>
-              {bold("Active:")} {g.active
-                ? yes()
-                : no()}
-            </div>
-            <div>
-              {bold("Permanent:")} {g.permanent
-                ? yes()
-                : no()}
-            </div>
-            <div>
               {bold("Duration:")} {
-                g.permanent
+                g.duration === 9223372036854775807
                   ? yes("Permanent")
-                  : (g.duration || no("null"))}
+                  : (g.duration ? `${Math.round(g.duration / 1000 / 60 / 60 / 24)} days` : no("null"))}
             </div>
           </div>
           <div className="flex flex-row flex-wrap gap-3 mt-2">
             <div className="">
               <div>
                 <div>
-                  {bold("Issued Reason:")} {g.reason || no("null")}
+                  {bold("Reason:")} {g.addedReason || no("null")}
                 </div>
                 <div>
-                  {bold("Issued By:")} {uuidToName[g.issuedBy] || no("Unknown")}
+                  {bold("Added By:")} {getDisplayName(g.addedBy)}
                 </div>
                 <div>
-                  {bold("Issued At:")} {
-                    g.issuedAt != "0"
-                      ? new Date(Number(g.issuedAt)).toLocaleString() || no("Unknown")
+                  {bold("Added At:")} {
+                    g.addedAt
+                      ? new Date(Number(g.addedAt)).toLocaleString() || no("Unknown")
                       : no("Unknown")}
                 </div>
                 <div>
-                  {bold("Issued On:")} {g.issuedOn || no("Unknown")}
+                  {bold("Added On:")} {g.addedOn || no("Unknown")}
                 </div>
               </div>
             </div>
@@ -120,11 +117,11 @@ export default function Page(params: Params) {
                 {bold("Removed Reason:")} {g.removedReason || no("Unknown")}
               </div>
               <div>
-                {bold("Removed By:")} {uuidToName[g.removedBy] || no("Unknown")}
+                {bold("Removed By:")} {getDisplayName(g.removedBy)}
               </div>
               <div>
                 {bold("Removed At:")} {
-                  g.removedAt != "0"
+                  g.removedAt && g.removedAt > 0
                     ? new Date(Number(g.removedAt)).toLocaleString() || no("Unknown")
                     : no("Unknown")}
               </div>
@@ -137,7 +134,7 @@ export default function Page(params: Params) {
             {bold("Scopes:")}
             {g.scopes.map((s, i) =>
               <>&nbsp;<span className="px-2 py-[2px] bg-base-100 rounded-xl">
-                {s.scope}
+                {s}
               </span></>
             )}
           </div>
