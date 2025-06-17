@@ -11,6 +11,8 @@ import { GetActiveRanks, GetRank, getRankColor, getRankFromName } from '@/servic
 import { GetProfileFromUuid, GetPublicConnections } from '@/services/controller/ProfileService';
 import { getPunishments } from '@/services/forum/punishment/PunishmentService';
 import SocialConnections from './SocialConnections';
+import { GetIsStaff } from "@/services/controller/ProfileService";
+
 import getSession from '@/libs/session/getSession';
 import Rank from '@/libs/types/entities/Rank';
 import { redirect } from "next/navigation";
@@ -21,14 +23,11 @@ interface UserParams {
 }
 export default async function Layout({ children: children }: UserParams) {
   const session = await getSession();
-  // Get session ranks from grants
-  const sessionGrants = await GetActiveRanks(session.uuid);
-  const sessionRanks: Rank[] = [];
-  for (const grant of sessionGrants) {
-    const [rank] = await GetRank(grant.rankId);
-    if (rank) sessionRanks.push(rank);
-  }
-  const sessionIsStaff = sessionRanks.some(rank => rank.staff);
+  // Use API endpoint to check if session user is staff
+  const [isStaffResult] = await GetIsStaff(session.uuid);
+  const sessionIsStaff = isStaffResult?.isStaff === true;
+  console.log('Session UUID:', session.uuid);
+  console.log('sessionIsStaff (from API):', sessionIsStaff);
 
   // Debug output for troubleshooting
   const currPath = new URL(headers().get('x-url')!).pathname;
