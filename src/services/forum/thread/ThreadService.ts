@@ -65,24 +65,32 @@ export async function getThreadsByForum(
     }
 ): Promise<Result<Thread[]>> {
     try {
-        const [data, status, error] = await client.GetAsync<RawThread[]>(`${baseEndpoint}/forum/${params.forumId}?page=${params.page || 1}`);
+        console.log("Fetching threads for forum:", params.forumId, "page:", params.page || 1);
+        // According to ForumController.java, threads are fetched via the forum endpoint
+        const [data, status, error] = await client.GetAsync<{ threads: RawThread[] }>(`/forum/forum/${params.forumId}?page=${params.page || 1}`);
+        console.log("Forum API response:", { data, status, error });
+        
         if (error) {
+            console.error("Error fetching threads for forum:", error);
             return {
                 success: false,
                 error: `Failed to fetch threads: ${error}`
             };
         }
-        if (!data) {
+        if (!data || !data.threads) {
+            console.error("No threads data returned for forum:", params.forumId);
             return {
                 success: false,
                 error: 'Failed to fetch threads: No data returned'
             };
         }
+        console.log("Successfully fetched threads:", data.threads.length);
         return {
             success: true,
-            data: data.map(createThreadInstance)
+            data: data.threads.map(createThreadInstance)
         };
     } catch (error) {
+        console.error("Exception fetching threads for forum:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to fetch threads'
@@ -97,12 +105,14 @@ export async function getThread(
     try {
         const [data, status, error] = await client.GetAsync<RawThread>(`${baseEndpoint}/${id}`);
         if (error) {
+            console.error("Error fetching thread:", error);
             return {
                 success: false,
                 error: `Failed to fetch thread: ${error}`
             };
         }
         if (!data) {
+            console.error("No thread data returned for ID:", id);
             return {
                 success: false,
                 error: 'Failed to fetch thread: No data returned'
@@ -113,6 +123,7 @@ export async function getThread(
             data: createThreadInstance(data)
         };
     } catch (error) {
+        console.error("Exception fetching thread:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to fetch thread'
@@ -132,12 +143,14 @@ export async function createThread(
     try {
         const [data, status, error] = await client.PostAsync<RawThread>(baseEndpoint, params);
         if (error) {
+            console.error("Error creating thread:", error);
             return {
                 success: false,
                 error: `Failed to create thread: ${error}`
             };
         }
         if (!data) {
+            console.error("No thread data returned after creation");
             return {
                 success: false,
                 error: 'Failed to create thread: No data returned'
@@ -148,6 +161,7 @@ export async function createThread(
             data: createThreadInstance(data)
         };
     } catch (error) {
+        console.error("Exception creating thread:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to create thread'
@@ -161,17 +175,20 @@ export async function updateThread(
         id: string;
         title?: string;
         body?: string;
+        locked?: boolean;
     }
 ): Promise<Result<Thread>> {
     try {
-        const [data, status, error] = await client.PostAsync<RawThread>(`${baseEndpoint}/edit`, params);
+        const [data, status, error] = await client.PutAsync<RawThread>(`${baseEndpoint}/${params.id}`, params);
         if (error) {
+            console.error("Error updating thread:", error);
             return {
                 success: false,
                 error: `Failed to update thread: ${error}`
             };
         }
         if (!data) {
+            console.error("No thread data returned after update");
             return {
                 success: false,
                 error: 'Failed to update thread: No data returned'
@@ -182,6 +199,7 @@ export async function updateThread(
             data: createThreadInstance(data)
         };
     } catch (error) {
+        console.error("Exception updating thread:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to update thread'
@@ -194,8 +212,9 @@ export async function deleteThread(
     id: string
 ): Promise<Result<void>> {
     try {
-        const [_, status, error] = await client.PostAsync(`${baseEndpoint}/delete`, { id });
+        const [_, status, error] = await client.DeleteAsync(`${baseEndpoint}/${id}`);
         if (error) {
+            console.error("Error deleting thread:", error);
             return {
                 success: false,
                 error: `Failed to delete thread: ${error}`
@@ -203,6 +222,7 @@ export async function deleteThread(
         }
         return { success: true };
     } catch (error) {
+        console.error("Exception deleting thread:", error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to delete thread'
