@@ -1,28 +1,29 @@
 'use server'
 
-import { isResultError } from "@/libs/Utils";
-import getSession from "@/libs/session/getSession";
-import { getHighestRank } from "@/services/controller/GrantService";
-import { DeleteThread, EditThread, GetThread } from "@/services/forum/thread/ThreadService";
+import { redirect } from "next/navigation";
+import { EditThread, getThread } from "@/services/forum/thread/ThreadService";
+import HTTPClient from "@/libs/HTTPClient";
 
-export async function unlockThread(threadId: string): Promise<string | undefined> {
+export async function unlockThread(threadId: string) {
   'use server'
+  const client = new HTTPClient(process.env.API_URL!);
+  const result = await getThread(client, threadId);
+  const thread = result.success ? result.data : undefined;
 
-  const thread = (await GetThread(threadId))[0]
-  if (!thread) return "Thread not found"
-  
-  const session = await getSession();
-  if (!session) return "Not logged in";
-  const rank = await getHighestRank(session.uuid);
-  const isStaff = rank?.staff || false;
+  if (!thread) {
+    return "Thread not found";
+  }
 
-  if (!isStaff) return "Permission denied";
+  const editResult = await EditThread(client, {
+    ...thread,
+    locked: false
+  });
 
-  thread.locked = false;
-  const res = await EditThread(thread);
+  if (!editResult.success) {
+    return editResult.error || "Failed to unlock thread";
+  }
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
+  redirect(`/forums/${thread.forum}/${thread.id}`);
 }
 
 

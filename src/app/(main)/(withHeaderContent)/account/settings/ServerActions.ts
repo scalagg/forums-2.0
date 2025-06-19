@@ -2,11 +2,10 @@
 
 import { isResultError } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
-import Account from "@/libs/types/entities/Account";
+import { Account } from "@/libs/types/entities/Account";
 import Profile from "@/libs/types/entities/Profile";
 import { GetProfileFromUuid, updateConnections } from "@/services/controller/ProfileService";
 import { UpdateAccountEmail, UpdateAccountPassword, getAccountFromUuid } from "@/services/forum/account/AccountService";
-
 
 export const updateConnectionsAction = async (formData: FormData) => {
   'use server'
@@ -119,20 +118,15 @@ export const updateEmailAction = async (formData: FormData) => {
     return res[2] || res[1].toFixed();
 }
 
-
 export const getUserData = async () => {
   'use server'
 
   const session = await getSession();
   if (!session) return "Not logged in";
 
-  // const profile = (await GetProfileFromUuid(session.uuid))[0] || {} as Profile;
   const account = (await getAccountFromUuid(session.uuid))[0] || {} as Account;
-  
-  account.password = undefined;
 
   return {
-    // profile: profile,
     account: account,
   }
-}
+} 

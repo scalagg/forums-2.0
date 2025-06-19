@@ -3,7 +3,7 @@
 import WebEntry from "@/libs/types/entities/WebEntry";
 import { useState } from "react";
 import { updateDataAction } from "./ServerActions";
-import Thread from "@/libs/types/entities/Thread";
+import { Thread } from "@/types/api";
 
 export interface Props {
   dataMap: { [key: string]: string },
@@ -85,4 +85,4 @@ const ThreadSelect = (props: ThreadSelectProps) => {
       <option key={i} value={a._id}>{a.title}</option>
     )}
   </select>
-}
+} 

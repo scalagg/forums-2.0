@@ -1,23 +1,26 @@
 import { getAllEntries } from "@/services/forum/websiteData/WebsiteDataService"
 import DataForm from "./DataForm";
-import { GetForum } from "@/services/forum/forum/ForumService";
-import { GetForumThreads } from "@/services/forum/thread/ThreadService";
-import Thread from "@/libs/types/entities/Thread";
+import { getForum } from "@/services/forum/forum/ForumService";
+import { getThreadsByForum } from "@/services/forum/thread/ThreadService";
+import { Thread } from "@/types/api";
+import HTTPClient from "@/libs/HTTPClient";
 
 export default async function Page() {
-
-  const websiteData = await getAllEntries();
+  const client = new HTTPClient(process.env.API_URL!);
+  
+  const websiteData = await getAllEntries(client);
   const dataMap = websiteData.reduce<{[key:string]: string}>((acc,crr) => {
     acc[crr._id] = crr.value; return acc;}, {});
 
-  const announcementsForum = (await GetForum("Announcements"))[0]
+  const announcementsForum = await getForum(client, "Announcements");
 
-  let threads: Thread[];
+  let threads: Thread[] = [];
 
-  if (!announcementsForum) {
-    threads = [];
-  } else {
-    threads = (await GetForumThreads(announcementsForum._id))[0] || [];
+  if (announcementsForum) {
+    const result = await getThreadsByForum(client, { forumId: announcementsForum.id });
+    if (result.success && result.data) {
+      threads = result.data;
+    }
   }
 
   return <div className="flex flex-col gap-3 py-2 px-3">

@@ -5,7 +5,8 @@ import getSession from "@/libs/session/getSession";
 import Forum from "@/libs/types/entities/Forum";
 import { getHighestRank } from "@/services/controller/GrantService";
 import { CreateForumCategory, GetForumCategories } from "@/services/forum/category/CategoryService";
-import { CreateForum } from "@/services/forum/forum/ForumService";
+import { createForum as createForumService } from "@/services/forum/forum/ForumService";
+import { HTTPClient } from "@/libs/HTTPClient";
 
 export async function createForum(formData: FormData): Promise<string | undefined> {
 
@@ -50,9 +51,16 @@ export async function createForum(formData: FormData): Promise<string | undefine
     threadAmount: 0,
   }
 
-  const res = await CreateForum(req);
+  const res = await createForumService(
+    new HTTPClient(process.env.API_URL!),
+    {
+      id: req._id,
+      name: req.name,
+      description: req.description,
+      category: req.category
+    }
+  );
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
-}
-
+  if (!res)
+    return "Failed to create forum";
+} 

@@ -3,12 +3,13 @@
 import { newUuid } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
 import { getAllFilters } from "@/services/forum/filter/TextFilterService";
-import { GetForum } from "@/services/forum/forum/ForumService";
-import { CreateThread } from "@/services/forum/thread/ThreadService";
+import { getForum } from "@/services/forum/forum/ForumService";
+import { createThread as createThreadService } from "@/services/forum/thread/ThreadService";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 import { getAuthorInfo } from "../../Utils";
 import { canUseForum } from "@/services/forum/account/AccountService";
+import HTTPClient from "@/libs/HTTPClient";
 
 export async function createThread(formData: FormData, forumId: string) {
   'use server'
@@ -16,7 +17,7 @@ export async function createThread(formData: FormData, forumId: string) {
   const session = await getSession();
   if (!session)
     return "Not logged in"
-  const forum = (await GetForum(forumId))[0]
+  const forum = await getForum(new HTTPClient(process.env.API_URL!), forumId);
   if (!forum)
     return "Forum not found"
   const user = await getAuthorInfo(session.uuid);
@@ -62,5 +63,14 @@ export async function createThread(formData: FormData, forumId: string) {
   }
 
   const author = session.uuid;
-  await CreateThread(id, title, body, forumId, author)
+  const result = await createThreadService(new HTTPClient(process.env.API_URL!), {
+    title,
+    body,
+    forum: forumId,
+    author
+  });
+  
+  if (!result.success) {
+    return result.error || "Failed to create thread";
+  }
 }

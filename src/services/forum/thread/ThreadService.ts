@@ -1,18 +1,14 @@
 'use server';
 
-import HTTPClient from '@/libs/HTTPClient';
-import type Thread from '@/libs/types/entities/Thread';
-import type { ReplyModel } from '@/libs/types/entities/ReplyModel';
-import type { UUID } from '@/libs/types/UUID';
+import HTTPClient from "@/libs/HTTPClient";
+import { Thread, ThreadReply } from "@/types/api";
 
-// Define Result type for consistent error handling
 interface Result<T> {
     success: boolean;
     data?: T;
     error?: string;
 }
 
-// Raw API response types with MongoDB fields
 interface RawThread {
     _id: string;
     title: string;
@@ -34,45 +30,33 @@ interface RawThread {
     seenBy: string[];
 }
 
+interface ReplyModel {
+    _id: string;
+    threadId: string;
+    body: string;
+    author: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
 const baseEndpoint = "/forum/thread";
 
-// Helper function to create a Thread instance
 function createThreadInstance(data: RawThread): Thread {
     return {
+        _id: data._id,
         id: data._id,
         title: data.title,
         body: data.body,
         forum: data.forum,
-        forumName: data.forumName,
-        author: data.author as UUID,
-        authorName: data.authorName,
-        authorWebColor: data.authorWebColor,
-        createdAt: data.createdAt,
-        lastEditedBy: data.lastEditedBy as UUID | undefined,
-        lastEditedAt: data.lastEditedAt,
-        lastReplyAt: data.lastReplyAt,
+        author: data.author,
+        createdAt: new Date(data.createdAt).toISOString(),
+        updatedAt: new Date(data.lastEditedAt).toISOString(),
         pinned: data.pinned,
         locked: data.locked,
-        parentThreadId: data.parentThreadId,
-        forumPermission: data.forumPermission,
-        imageUrl: data.imageUrl,
-        seenBy: data.seenBy.map(id => id as UUID),
-        // Helper methods will be added by the thread utility functions
-        getLastReply: () => null, // TODO: Implement
-        getReplies: () => [], // TODO: Implement
-        getFormattedForum: () => data.forumName,
-        getLastReplyAgo: () => '', // TODO: Implement
-        getLastEditedAgo: () => '', // TODO: Implement
-        getPostedAgo: () => '', // TODO: Implement
-        canDelete: () => false, // TODO: Implement
-        canEdit: () => false, // TODO: Implement
-        canLock: () => false, // TODO: Implement
-        hasSeen: () => false, // TODO: Implement
-        getContent: () => data.body
+        replies: []
     };
 }
 
-// Thread Management
 export async function getThreadsByForum(
     client: HTTPClient,
     params: {
@@ -88,9 +72,15 @@ export async function getThreadsByForum(
                 error: `Failed to fetch threads: ${error}`
             };
         }
+        if (!data) {
+            return {
+                success: false,
+                error: 'Failed to fetch threads: No data returned'
+            };
+        }
         return {
             success: true,
-            data: (data || []).map(createThreadInstance)
+            data: data.map(createThreadInstance)
         };
     } catch (error) {
         return {
@@ -262,7 +252,6 @@ export async function pinThread(
     }
 }
 
-// Reply Management
 export async function createReply(
     client: HTTPClient,
     params: {
@@ -319,57 +308,4 @@ export async function deleteReply(
             error: error instanceof Error ? error.message : 'Failed to delete reply'
         };
     }
-}
-
-// Backward compatibility exports
-export const GetForumThreads = async (forumId: string, page: number = 1, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await getThreadsByForum(client, { forumId, page });
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [result.data, 200, null] as const;
-};
-
-export const GetThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await getThread(client, id);
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [result.data, 200, null] as const;
-};
-
-export const CreateThread = async (id: string, title: string, body: string, forum: string, author: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await createThread(client, { title, body, forum, author });
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [result.data, 200, null] as const;
-};
-
-export const EditThread = async (thread: Thread, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await updateThread(client, { 
-        id: thread.id, 
-        title: thread.title, 
-        body: thread.body 
-    });
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [result.data, 200, null] as const;
-};
-
-export const DeleteThread = async (id: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await deleteThread(client, id);
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [null, 200, null] as const;
-};
-
-export const DeleteReply = async (parentId: string, replyId: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-    const result = await deleteReply(client, replyId);
-    if (!result.success) {
-        return [null, 500, result.error] as const;
-    }
-    return [null, 200, null] as const;
-}; 
+} 

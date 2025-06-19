@@ -134,9 +134,11 @@ export const GetActiveRanks = async (uuid: string, client: HTTPClient = new HTTP
 export const getHighestRank = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
   const activeRanks = await GetActiveRanks(uuid, client);
   if (!activeRanks.length) return undefined;
-  // You may need to fetch rank details to get priority/weight
-  // For now, just return the first active rank
-  return activeRanks[0];
+  
+  // Get the first active rank and fetch its details
+  const highestGrant = activeRanks[0];
+  const [rank] = await client.GetAsync<Rank>(`/rank/${highestGrant.rankId}`);
+  return rank;
 };
 
 export const getRankFromName = async (name: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) =>

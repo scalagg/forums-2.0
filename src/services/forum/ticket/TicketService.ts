@@ -3,131 +3,98 @@
 import HTTPClient from "@/libs/HTTPClient";
 import { Ticket, TicketStatus } from "@/types/api";
 
-export default class TicketService {
-  private readonly client: HTTPClient;
-  private readonly baseEndpoint = "/forum/ticket";
+const baseEndpoint = "/forum/ticket";
 
-  constructor(client: HTTPClient) {
-    this.client = client;
-  }
+// Ticket Management
+export async function getTicket(client: HTTPClient, id: string): Promise<Ticket | null> {
+  const [ticket] = await client.GetAsync<Ticket>(`${baseEndpoint}/${id}`);
+  return ticket;
+}
 
-  // Ticket Management
-  async getTicket(id: string): Promise<Ticket | null> {
-    const [ticket] = await this.client.GetAsync<Ticket>(`${this.baseEndpoint}/${id}`);
-    return ticket;
-  }
+export async function getPlayerTickets(client: HTTPClient, uuid: string, page: number = 1): Promise<Ticket[]> {
+  const [tickets] = await client.GetAsync<Ticket[]>(`${baseEndpoint}/player/${uuid}?page=${page}`);
+  return tickets || [];
+}
 
-  async getPlayerTickets(uuid: string, page: number = 1): Promise<Ticket[]> {
-    const [tickets] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/player/${uuid}?page=${page}`);
-    return tickets || [];
-  }
+export async function getStaffTickets(client: HTTPClient, page: number = 1): Promise<Ticket[]> {
+  const [tickets] = await client.GetAsync<Ticket[]>(`${baseEndpoint}/s/all?page=${page}`);
+  return tickets || [];
+}
 
-  async getStaffTickets(page: number = 1): Promise<Ticket[]> {
-    const [tickets] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/s/all?page=${page}`);
-    return tickets || [];
-  }
+export async function getStaffApplications(client: HTTPClient, page: number = 1): Promise<Ticket[]> {
+  const [applications] = await client.GetAsync<Ticket[]>(`${baseEndpoint}/s/all/applications?page=${page}`);
+  return applications || [];
+}
 
-  async getStaffApplications(page: number = 1): Promise<Ticket[]> {
-    const [applications] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/s/all/applications?page=${page}`);
-    return applications || [];
-  }
+export async function getPlayerApplications(client: HTTPClient, uuid: string, page: number = 1): Promise<Ticket[]> {
+  const [applications] = await client.GetAsync<Ticket[]>(`${baseEndpoint}/player/${uuid}/applications?page=${page}`);
+  return applications || [];
+}
 
-  async getPlayerApplications(uuid: string, page: number = 1): Promise<Ticket[]> {
-    const [applications] = await this.client.GetAsync<Ticket[]>(`${this.baseEndpoint}/player/${uuid}/applications?page=${page}`);
-    return applications || [];
-  }
-
-  // Ticket Actions
-  async createTicket(ticket: {
+// Ticket Actions
+export async function createTicket(
+  client: HTTPClient,
+  ticket: {
     title: string;
     body: string;
     category: string;
     author: string;
-  }): Promise<Ticket | null> {
-    const [newTicket] = await this.client.PostAsync<Ticket>(this.baseEndpoint, ticket);
-    return newTicket;
   }
+): Promise<Ticket | null> {
+  const [newTicket] = await client.PostAsync<Ticket>(baseEndpoint, ticket);
+  return newTicket;
+}
 
-  async replyToTicket(ticketId: string, reply: {
+export async function replyToTicket(
+  client: HTTPClient,
+  ticketId: string,
+  reply: {
     body: string;
     author: string;
-  }): Promise<Ticket | null> {
-    const [updatedTicket] = await this.client.PostAsync<Ticket>(`${this.baseEndpoint}/${ticketId}/reply`, reply);
-    return updatedTicket;
   }
+): Promise<Ticket | null> {
+  const [updatedTicket] = await client.PostAsync<Ticket>(`${baseEndpoint}/${ticketId}/reply`, reply);
+  return updatedTicket;
+}
 
-  async updateTicket(ticketId: string, updates: {
+export async function updateTicket(
+  client: HTTPClient,
+  ticketId: string,
+  updates: {
     status?: TicketStatus;
     category?: string;
     title?: string;
-  }): Promise<Ticket | null> {
-    const [updatedTicket] = await this.client.PutAsync<Ticket>(`${this.baseEndpoint}/${ticketId}`, updates);
-    return updatedTicket;
   }
-
-  async archiveTicket(ticketId: string): Promise<boolean> {
-    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/${ticketId}/archive`);
-    return status === 200;
-  }
-
-  async unarchiveTicket(ticketId: string): Promise<boolean> {
-    const [, status] = await this.client.PostAsync(`${this.baseEndpoint}/${ticketId}/unarchive`);
-    return status === 200;
-  }
-
-  async deleteTicket(ticketId: string): Promise<boolean> {
-    const [, status] = await this.client.DeleteAsync(`${this.baseEndpoint}/${ticketId}`);
-    return status === 200;
-  }
-
-  // Legacy Methods (Kept for backward compatibility)
-  // TODO: Remove these once we fully migrate to the new API
-  /*
-  async getTicket(id: string): Promise<Ticket | null> {
-    const [ticket] = await this.client.GetAsync<Ticket>(`/forum/ticket/${id}`);
-    return ticket;
-  }
-
-  async getPlayerTickets(uuid: string, page: number = 1): Promise<Ticket[]> {
-    const [tickets] = await this.client.GetAsync<Ticket[]>(`/forum/ticket/player/${uuid}?page=${page}`);
-    return tickets || [];
-  }
-
-  async getStaffTickets(): Promise<Ticket[]> {
-    const [tickets] = await this.client.GetAsync<Ticket[]>(`/forum/ticket/admin`);
-    return tickets || [];
-  }
-
-  async createTicket(ticket: Partial<Ticket>): Promise<Ticket | null> {
-    const [newTicket] = await this.client.PostAsync<Ticket>(`/forum/ticket`, ticket);
-    return newTicket;
-  }
-
-  async replyToTicket(parentId: string, ticket: Partial<Ticket>): Promise<Ticket | null> {
-    const [newReply] = await this.client.PostAsync<Ticket>(`/forum/ticket/${parentId}/reply`, ticket);
-    return newReply;
-  }
-
-  async updateTicket(ticket: Ticket): Promise<Ticket | null> {
-    const [updatedTicket] = await this.client.PutAsync<Ticket>(`/forum/ticket/${ticket._id}`, ticket);
-    return updatedTicket;
-  }
-
-  async archiveTicket(id: string): Promise<boolean> {
-    const [, status] = await this.client.PostAsync(`/forum/ticket/${id}/archive`);
-    return status === 200;
-  }
-
-  async unarchiveTicket(id: string): Promise<boolean> {
-    const [, status] = await this.client.PostAsync(`/forum/ticket/${id}/unarchive`);
-    return status === 200;
-  }
-
-  async deleteTicket(id: string): Promise<boolean> {
-    const [, status] = await this.client.DeleteAsync(`/forum/ticket/${id}`);
-    return status === 200;
-  }
-  */
+): Promise<Ticket | null> {
+  const [updatedTicket] = await client.PutAsync<Ticket>(`${baseEndpoint}/${ticketId}`, updates);
+  return updatedTicket;
 }
 
+export async function archiveTicket(client: HTTPClient, ticketId: string): Promise<boolean> {
+  const [, status] = await client.PostAsync(`${baseEndpoint}/${ticketId}/archive`);
+  return status === 200;
+}
 
+export async function unarchiveTicket(client: HTTPClient, ticketId: string): Promise<boolean> {
+  const [, status] = await client.PostAsync(`${baseEndpoint}/${ticketId}/unarchive`);
+  return status === 200;
+}
+
+export async function deleteTicket(client: HTTPClient, ticketId: string): Promise<boolean> {
+  const [, status] = await client.DeleteAsync(`${baseEndpoint}/${ticketId}`);
+  return status === 200;
+}
+
+// Aliases for backward compatibility
+export const GetTicket = getTicket;
+export const GetPlayerTickets = getPlayerTickets;
+export const GetStaffTickets = getStaffTickets;
+export const GetStaffApplications = getStaffApplications;
+export const GetPlayerApplications = getPlayerApplications;
+export const CreateTicket = createTicket;
+export const ReplyToTicket = replyToTicket;
+export const UpdateTicket = updateTicket;
+export const ArchiveTicket = archiveTicket;
+export const UnarchiveTicket = unarchiveTicket;
+export const DeleteTicket = deleteTicket;
+export const GetAllTickets = getStaffTickets; // Assuming this is the same as getStaffTickets 

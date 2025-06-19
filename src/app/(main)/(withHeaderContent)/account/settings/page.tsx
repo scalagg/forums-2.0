@@ -16,7 +16,7 @@ export default async function Page() {
   const [connections] = await GetPublicConnections(session.uuid);
   if (profile && connections) (profile as any).webSettings = connections;
 
-  if (!profile) {
+  if (!profile || !account) {
     redirect("/");
     return null;
   }

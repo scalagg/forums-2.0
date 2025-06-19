@@ -3,11 +3,11 @@ import ThreadInfo from './(components)/ThreadInfo';
 import { awaitAll, isResultError, stringToDate, toLocaleString } from '@/libs/Utils';
 import { getAuthorInfo, getThreadShortId, threadSorter } from './Utils';
 import { ForumCategory } from '@/types/api';
-import CategoryController from '@/services/controller/CategoryController';
+import { getAllCategories } from '@/services/controller/CategoryController';
 import Category from './(components)/Category';
 import AsideInfo from './(components)/AsideInfo';
 import { Thread } from '@/types/api';
-import ThreadController from '@/services/controller/ThreadController';
+import { getThread } from '@/services/controller/ThreadController';
 import Navigation from "@/app/(main)/(withHeaderContent)/forums/(components)/Navigation";
 import Link from 'next/link';
 import SideOptions, { SideOption } from './(components)/SideOptions';
@@ -19,10 +19,8 @@ interface UserParams {}
 
 export default async function Page({ }: UserParams) {
   const client = new HTTPClient(process.env.API_URL!);
-  const categoryController = new CategoryController(client);
-  const threadController = new ThreadController(client);
 
-  const [categories, error] = await categoryController.getAllCategories();
+  const [categories, error] = await getAllCategories(client);
   if (error) {
     console.error("Error fetching categories:", error);
   }
@@ -43,7 +41,7 @@ export default async function Page({ }: UserParams) {
       .filter(t => !!t)
       .sort(threadSorter)
       .map(async t => {
-        const [thread, threadError] = await threadController.getThread(t!._id);
+        const [thread, threadError] = await getThread(client, t!._id);
         if (threadError) {
           console.error("Error fetching thread:", threadError);
           return undefined;
@@ -67,7 +65,7 @@ export default async function Page({ }: UserParams) {
         .filter(t => t !== undefined)
         .map(t => t!.thread)
         .map(async t => {
-          const [thread, threadError] = await threadController.getThread(t._id);
+          const [thread, threadError] = await getThread(client, t._id);
           if (threadError) {
             console.error("Error fetching thread:", threadError);
             return undefined;

@@ -5,7 +5,7 @@ import { ClientMCHead } from "@/components/Minecraft/Client";
 import Reply from '@/libs/types/entities/Thread'
 import { getAuthorInfo } from "../../Utils";
 import { IoTrash } from "react-icons/io5";
-import { DeleteReply, GetThread } from "@/services/forum/thread/ThreadService";
+import { DeleteReply, getThread } from "@/services/forum/thread/ThreadService";
 import { useCallback, useEffect, useState } from "react";
 import useGlobal from "@/hooks/useGlobal";
 import Thread from "@/libs/types/entities/Thread";
@@ -13,6 +13,7 @@ import Rank from "@/libs/types/entities/Rank";
 import { IoIosArrowDown } from "react-icons/io";
 import useSession from "@/hooks/useSession";
 import Link from "next/link";
+import HTTPClient from "@/libs/HTTPClient";
 
 export interface RepliesData {
   replies: Reply[];
@@ -29,15 +30,15 @@ const Replies = (props: RepliesData) => {
   console.log(replies);
 
   const updateReplies = useCallback(async () => {
-    let res0 = await GetThread(threadId);
+    const client = new HTTPClient(process.env.NEXT_PUBLIC_API_URL!);
+    const result = await getThread(client, threadId);
 
-    const isError = isResultError(res0);
-    if (isError) {
-      console.error("Error fetching thread: HTTP " + res0[1]);
+    if (!result.success) {
+      console.error("Error fetching thread:", result.error);
       return;
     }
     
-    setCurrReplies(res0[0]!.replies)
+    setCurrReplies(result.data!.replies)
   }, [threadId])
 
   useEffect(() => {

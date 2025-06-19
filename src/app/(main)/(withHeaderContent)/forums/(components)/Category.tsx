@@ -1,5 +1,5 @@
 import { Forum } from '@/types/api';
-import Forum from './Forum';
+import ForumComponent from './Forum';
 import Link from 'next/link';
 
 interface CategoryProps {
@@ -14,7 +14,7 @@ export default function Category({ name, forums }: CategoryProps) {
       <div className="flex flex-col gap-2">
         {forums.map(f => (
           <Link key={f.id} href={`/forums/${f.id}`}>
-            <Forum
+            <ForumComponent
               name={f.name}
               description={f.description}
               threadCount={f.threadCount}

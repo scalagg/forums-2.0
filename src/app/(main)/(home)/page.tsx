@@ -8,31 +8,30 @@ import { GetRank } from '@/services/controller/GrantService';
 import { getEntry } from '@/services/forum/websiteData/WebsiteDataService';
 import Bullet from './Bullet';
 import ClipboardTooltip from '@/components/ClipboardTooltip/ClipboardTooltip';
-import { GetThread } from '@/services/forum/thread/ThreadService';
+import { getThread } from '@/services/forum/thread/ThreadService';
 import Thread from '@/libs/types/entities/Thread';
 import { min } from 'rxjs';
 import { existsSync } from 'fs';
 import { marked } from "marked"
 import DOMPurify from 'isomorphic-dompurify';
+import HTTPClient from '@/libs/HTTPClient';
 
 export default async function Page() {
+  const client = new HTTPClient(process.env.API_URL!);
   const session = await getSession();
-  const grant = await getHighestRank(session.uuid);
-  let isStaff = false;
-  if (grant) {
-    const [rank] = await GetRank(grant.rankId);
-    isStaff = !!rank?.staff;
-  }
-  const headline = await getEntry("headline") || "";
-  const headlineColor = await getEntry("headlineColor") || "green"
+  const rank = await getHighestRank(session.uuid);
+  const isStaff = rank?.staff || false;
+  const headline = await getEntry("headline", client) || "";
+  const headlineColor = await getEntry("headlineColor", client) || "green"
 
-  const mainHightlightId = await getEntry("highlightThreadMain")
+  const mainHightlightId = await getEntry("highlightThreadMain", client)
   let mainHighlight;
 
   if (!mainHightlightId) {
     mainHighlight = undefined;
   } else {
-    mainHighlight = (await GetThread(mainHightlightId))[0];
+    const result = await getThread(client, mainHightlightId);
+    mainHighlight = result.success ? result.data : undefined;
     if (mainHighlight) {
       const bodyMarkdownUNSAFE = marked.parse(mainHighlight?.body || "") as string;
       const bodyMarkdown = DOMPurify.sanitize(bodyMarkdownUNSAFE);
@@ -43,11 +42,12 @@ export default async function Page() {
   const highlights: Thread[] = [];
 
   for (let i = 0; ; i++) {
-    const id = await getEntry(`highlightThread${i}`);
+    const id = await getEntry(`highlightThread${i}`, client);
     if (!id) break;
     if (id == "None") continue;
 
-    const thread = (await GetThread(id))[0];
+    const result = await getThread(client, id);
+    const thread = result.success ? result.data : undefined;
     if (thread) {
       const bodyMarkdownUNSAFE = marked.parse(thread.body) as string;
       const bodyMarkdown = DOMPurify.sanitize(bodyMarkdownUNSAFE);

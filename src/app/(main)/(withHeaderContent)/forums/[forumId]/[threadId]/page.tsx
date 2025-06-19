@@ -1,6 +1,6 @@
 import './styles.css'
 import { ServerMCBust, ServerMCHead } from "@/components/Minecraft/Server";
-import { DeleteThread, EditThread, GetThread } from '@/services/forum/thread/ThreadService';
+import { DeleteThread, EditThread, getThread } from '@/services/forum/thread/ThreadService';
 import { isResultError, stringToDate, toLocaleString } from "@/libs/Utils";
 import HashLink from '@/components/HashLink';
 import getSession from '@/libs/session/getSession';
@@ -12,11 +12,12 @@ import Navigation from "@/app/(main)/(withHeaderContent)/forums/(components)/Nav
 import Link from 'next/link';
 import SideOptions, { SideOption } from '../../(components)/SideOptions';
 import { getHighestRank } from '@/services/controller/GrantService';
-import { GetForum } from '@/services/forum/forum/ForumService';
+import { getForum } from '@/services/forum/forum/ForumService';
 import { redirect } from 'next/navigation';
 import { canUseForum } from '@/services/forum/account/AccountService';
 import { marked } from "marked"
 import DOMPurify from 'isomorphic-dompurify';
+import HTTPClient from '@/libs/HTTPClient';
 
 interface Props {
   params: {
@@ -26,18 +27,19 @@ interface Props {
 }
 export default async function Page(props: Props) {
   const { forumId, threadId } = props.params;
+  const client = new HTTPClient(process.env.API_URL!);
 
   const thisThreadId = threadId;
 
-  let res0 = await GetThread(thisThreadId);
-  const isError = isResultError(res0);
-  if (isError)
-    console.error("Error fetching thread: HTTP " + res0[1]);
-  const thread = res0[0];
+  const result = await getThread(client, thisThreadId);
+  if (!result.success) {
+    console.error("Error fetching thread:", result.error);
+  }
+  const thread = result.data;
 
   if (!thread) return <>
     <div className="flex flex-col gap-4 p-8 rounded-lg h-fit w-screen max-w-[996px] items-center">
-      <h4>{isError && res0[1] !== 404 ? "An Error has occurred while fetching this thread." : "This thread was not found. Perhaps it got deleted?"}</h4>
+      <h4>{!result.success && result.error !== "Thread not found" ? "An Error has occurred while fetching this thread." : "This thread was not found. Perhaps it got deleted?"}</h4>
     </div>
   </>;
 
@@ -57,8 +59,11 @@ export default async function Page(props: Props) {
     DEVELOPER: "#ff4141"
   }[r ?? '']) ?? "#ffffff";
 
-  const forum = (await GetForum(forumId))[0]
-  if (!forum) redirect("/forums");
+  const forum = await getForum(client, forumId);
+  if (!forum) {
+    console.error("Forum not found");
+    return <div>Forum not found</div>;
+  }
 
   const bodyMarkdownUNSAFE = marked.parse(thread.body) as string;
   const bodyMarkdown = DOMPurify.sanitize(bodyMarkdownUNSAFE);
@@ -102,8 +107,6 @@ export default async function Page(props: Props) {
       })
     }
   }
-
-
 
   return <div className="flex flex-row flex-wrap justify-center w-[80%]">
     <Navigation>

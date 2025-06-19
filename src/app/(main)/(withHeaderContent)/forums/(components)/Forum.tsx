@@ -1,7 +1,6 @@
 import '../styles.css'
 import TableEntry from '@/components/Table/TableEntry';
 import HashLink from '@/components/HashLink';
-import Thread from '@/libs/types/entities/Thread';
 import Rank from '@/libs/types/entities/Rank';
 import ThreadInfo from './ThreadInfo';
 import Link from 'next/link';

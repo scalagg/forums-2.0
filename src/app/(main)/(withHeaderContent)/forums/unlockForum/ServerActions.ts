@@ -3,7 +3,8 @@
 import { isResultError, newUuid } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
 import { getHighestRank } from "@/services/controller/GrantService";
-import { DeleteForum, EditForum, GetForum } from "@/services/forum/forum/ForumService";
+import { updateForum, getForum } from "@/services/forum/forum/ForumService";
+import { HTTPClient } from "@/libs/HTTPClient";
 
 export async function unlockForum(formData: FormData): Promise<string | undefined> {
 
@@ -19,14 +20,16 @@ export async function unlockForum(formData: FormData): Promise<string | undefine
   if (!id)
     return "Forum not selected"
 
-  const forum = (await GetForum(id.toString()))[0]
+  const forum = await getForum(new HTTPClient(process.env.API_URL!), id.toString());
   if (!forum)
     return "Forum not found"
 
-  forum.locked = false
-  const res = await EditForum(forum);
+  const res = await updateForum(
+    new HTTPClient(process.env.API_URL!),
+    id.toString(),
+    { locked: false }
+  );
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
-}
-
+  if (!res)
+    return "Failed to update forum";
+} 

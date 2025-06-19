@@ -3,8 +3,9 @@
 import { isResultError, newUuid } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
 import { getHighestRank } from "@/services/controller/GrantService";
-import { DeleteForum } from "@/services/forum/forum/ForumService";
+import { deleteForum as deleteForumService } from "@/services/forum/forum/ForumService";
 import { DeleteThread, GetForumThreads } from "@/services/forum/thread/ThreadService";
+import { HTTPClient } from "@/libs/HTTPClient";
 
 export async function deleteForum(formData: FormData): Promise<string | undefined> {
 
@@ -26,9 +27,8 @@ export async function deleteForum(formData: FormData): Promise<string | undefine
     await DeleteThread(t._id);
   }
 
-  const res = await DeleteForum(id.toString());
+  const res = await deleteForumService(new HTTPClient(process.env.API_URL!), id.toString());
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
-}
-
+  if (!res)
+    return "Failed to delete forum";
+} 

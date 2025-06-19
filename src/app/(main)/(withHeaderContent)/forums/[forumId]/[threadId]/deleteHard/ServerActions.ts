@@ -4,9 +4,10 @@ import { isResultError } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
 import { getHighestRank } from "@/services/controller/GrantService";
 import { canUseForum } from "@/services/forum/account/AccountService";
-import { DeleteThread, EditThread, GetThread } from "@/services/forum/thread/ThreadService";
+import { DeleteThread, EditThread, getThread } from "@/services/forum/thread/ThreadService";
 import { existsSync } from "fs";
 import { rm } from "fs/promises";
+import HTTPClient from "@/libs/HTTPClient";
 
 export async function deleteThreadHard(threadId: string): Promise<string | undefined> {
   'use server'
@@ -18,11 +19,12 @@ export async function deleteThreadHard(threadId: string): Promise<string | undef
 
   if (!isStaff && !(await canUseForum(session.uuid))) return "Permission denied";
 
-  const res = await DeleteThread(threadId);
+  const client = new HTTPClient(process.env.API_URL!);
+  const result = await DeleteThread(client, threadId);
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
-
+  if (!result.success) {
+    return result.error || "Failed to delete thread";
+  }
 }
 
 

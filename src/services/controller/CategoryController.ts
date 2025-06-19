@@ -1,5 +1,5 @@
 import HTTPClient from '@/libs/HTTPClient';
-import ForumCategory from '@/libs/types/entities/ForumCategory';
+import { ForumCategory } from '@/types/api';
 
 type Result<T> = [T | null, { status: number; message: string } | null];
 

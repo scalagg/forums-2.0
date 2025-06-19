@@ -1,10 +1,11 @@
 import Table from '@/components/Table/Table';
 import ThreadComponent from './Thread';
-import { GetForumThreads, GetThread } from '@/services/forum/thread/ThreadService';
-import { GetForum } from '@/services/forum/forum/ForumService';
+import { getThreadsByForum, getThread } from '@/services/forum/thread/ThreadService';
+import { getForum } from '@/services/forum/forum/ForumService';
 import { isResultError } from '@/libs/Utils';
 import { getThreadShortId, threadSorter } from '../Utils';
 import Navigation from "@/app/(main)/(withHeaderContent)/forums/(components)/Navigation";
+import HTTPClient from '@/libs/HTTPClient';
 
 interface Params {
   params: {
@@ -12,29 +13,32 @@ interface Params {
   }
 }
 export default async function Page({ params: { forumId } }: Params) {
-  const res0 = await GetForumThreads(forumId);
-  const isError = isResultError(res0);
-  if (isError)
-    console.error("Error while fetching threads from Id: HTTP " + res0[1]);
-  const threads = res0[0];
+  const result0 = await getThreadsByForum(new HTTPClient(process.env.API_URL!), { forumId });
+  if (!result0.success) {
+    console.error("Error while fetching threads from Id: " + result0.error);
+  }
+  const threads = result0.data || [];
+  
   for (let t = 0; t < (threads?.length ?? 0); t++) {
-    const res = await GetThread(threads![t]._id);
-    const isError = isResultError(res);
-    if (isError)
-      console.error("Error while fetching thread replies: HTTP " + res[1]);
-    threads![t].replies = res[0]?.replies ?? [];
+    const result = await getThread(new HTTPClient(process.env.API_URL!), threads![t]._id);
+    if (!result.success) {
+      console.error("Error while fetching thread replies: " + result.error);
+    }
+    threads![t].replies = result.data?.replies ?? [];
   }
 
-  const res1 = await GetForum(forumId);
-  if (isResultError(res1))
-    console.error("Error while fetching Forum: HTTP " + res1[1]);
-  const forumDisplayName = res1[0]?.name;
+  const forum = await getForum(new HTTPClient(process.env.API_URL!), forumId);
+  if (!forum) {
+    console.error("Forum not found");
+    return <div>Forum not found</div>;
+  }
+  const forumDisplayName = forum.name;
   const header = [
     <small key={0} className="flex justify-start text-start smaller tracking-wider uppercase">{forumDisplayName}</small>,
     <small key={1} className="flex justify-center text-center smaller tracking-wider uppercase">Replies</small>,
     <small key={2} className="flex justify-end text-end smaller tracking-wider uppercase">Latest reply</small>
   ];
-  const locked = res1[0]?.locked;
+  const locked = forum.locked;
   return (
     <Navigation>
       <div
@@ -44,7 +48,7 @@ export default async function Page({ params: { forumId } }: Params) {
             ? <span className="text-lg text-red-500 px-3">This Forum is Locked</span>
             : <></>}
           {!threads || !threads.length ?
-            <span className="col-span-full text-center my-4">{isError ?
+            <span className="col-span-full text-center my-4">{isResultError(result0) ?
               <h4>Error while fetching threads for forum.</h4> :
               <small>0 threads in this forum. Be the first!</small>}</span> :
             threads.sort(threadSorter).map(t =>
@@ -56,4 +60,4 @@ export default async function Page({ params: { forumId } }: Params) {
       </div>
     </Navigation>
   );
-}
+} 

@@ -3,12 +3,15 @@
 import { isResultError } from "@/libs/Utils";
 import getSession from "@/libs/session/getSession";
 import { getHighestRank } from "@/services/controller/GrantService";
-import { DeleteThread, EditThread, GetThread } from "@/services/forum/thread/ThreadService";
+import { DeleteThread, EditThread, getThread } from "@/services/forum/thread/ThreadService";
+import HTTPClient from "@/libs/HTTPClient";
 
 export async function lockThread(threadId: string): Promise<string | undefined> {
   'use server'
 
-  const thread = (await GetThread(threadId))[0]
+  const client = new HTTPClient(process.env.API_URL!);
+  const result = await getThread(client, threadId);
+  const thread = result.success ? result.data : undefined;
   if (!thread) return "Thread not found"
   
   const session = await getSession();
@@ -19,10 +22,11 @@ export async function lockThread(threadId: string): Promise<string | undefined> 
   if (!isStaff) return "Permission denied";
 
   thread.locked = true;
-  const res = await EditThread(thread);
+  const editResult = await EditThread(client, thread);
 
-  if (isResultError(res))
-    return res[2] || res[1].toFixed();
+  if (!editResult.success) {
+    return editResult.error || "Failed to edit thread";
+  }
 }
 
 

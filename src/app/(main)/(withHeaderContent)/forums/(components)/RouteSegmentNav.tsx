@@ -1,6 +1,6 @@
-import {GetForum} from "@/services/forum/forum/ForumService";
+import { getForum } from "@/services/forum/forum/ForumService";
 import {isResultError} from "@/libs/Utils";
-import {GetThread} from "@/services/forum/thread/ThreadService";
+import {getThread} from "@/services/forum/thread/ThreadService";
 import {IoHome} from "react-icons/io5";
 import HashLink from "@/components/HashLink";
 import {headers} from "next/headers";
@@ -9,6 +9,7 @@ import Link from "next/link";
 import getSession from "@/libs/session/getSession";
 import { getAuthorInfo } from "../Utils";
 import { canUseForum } from "@/services/forum/account/AccountService";
+import HTTPClient from "@/libs/HTTPClient";
 
 interface Route { route: string, routeTitle: string, idx: number }
 const RouteSegmentNav = async () => {
@@ -24,27 +25,27 @@ const RouteSegmentNav = async () => {
   if (!forumId) {
     routes[1] = null;
   } else {
-    const r = await GetForum(forumId);
-    if (isResultError(r)) {
-      console.error("Error while fetching Forum: HTTP " + r[1]);
+    const forum = await getForum(new HTTPClient(process.env.API_URL!), forumId);
+    if (!forum) {
+      console.error("Forum not found");
     } else {
-      let title = r[0]!.name;
+      let title = forum.name;
       if (title.length > 23)
         title = title.substring(0, 20) + "...";
       routes[1] = {route: `/forums/${forumId}`, routeTitle: title, idx: 1};
-      if (r[0]?.locked) locked = true;
-      if (r[0]?.name == "Announcements") hasImage = true;
+      if (forum.locked) locked = true;
+      if (forum.name == "Announcements") hasImage = true;
     }
   }
 
   if (!forumId || !threadId) {
     routes[2] = null;
   } else {
-    const r = await GetThread(forumId + '.' + threadId);
-    if (isResultError(r)) {
-      console.error("Error while fetching Thread: HTTP " + r[1]);
+    const result = await getThread(new HTTPClient(process.env.API_URL!), forumId + '.' + threadId);
+    if (!result.success) {
+      console.error("Error while fetching Thread: " + result.error);
     } else {
-      let title = r[0]!.title;
+      let title = result.data!.title;
       if (title.length > 23)
         title = title.substring(0, 20) + "...";
       routes[2] = {route: `/forums/${forumId}/${threadId}`, routeTitle: title, idx: 2};

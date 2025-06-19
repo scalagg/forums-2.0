@@ -1,12 +1,13 @@
 // New API Types
-// TODO: Update these types as we discover more about the new API structure
+// Updated to match the structure from the old Scala site
 
 // Forum Types
 export interface ForumCategory {
   id: string;
   name: string;
   weight: number;
-  // TODO: Add any new fields from the Scala API
+  permission?: string;
+  forums: Forum[];
 }
 
 export interface Forum {
@@ -14,10 +15,17 @@ export interface Forum {
   name: string;
   description: string;
   category: string;
-  // TODO: Add any new fields from the Scala API
+  weight: number;
+  permission?: string;
+  locked: boolean;
+  threadCount: number;
+  replyCount: number;
+  lastThread?: Thread;
+  categoryPermission?: string;
 }
 
 export interface Thread {
+  _id: string;
   id: string;
   title: string;
   body: string;
@@ -25,17 +33,20 @@ export interface Thread {
   author: string;
   createdAt: string;
   updatedAt: string;
-  // TODO: Add any new fields from the Scala API
+  pinned?: boolean;
+  locked?: boolean;
+  replies: ThreadReply[];
 }
 
 export interface ThreadReply {
+  _id: string;
   id: string;
   threadId: string;
+  forum: string;
   body: string;
   author: string;
   createdAt: string;
   updatedAt: string;
-  // TODO: Add any new fields from the Scala API
 }
 
 // Account Types

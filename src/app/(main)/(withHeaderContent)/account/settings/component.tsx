@@ -6,13 +6,13 @@ import { FaCogs, FaDiscord, FaInstagram, FaTwitter, FaUserShield, FaYoutube } fr
 import { FaKey, FaServer, FaUnlockKeyhole } from "react-icons/fa6";
 import { useState } from "react";
 import { UpdateAccountPassword } from "@/services/forum/account/AccountService";
-import Account from "@/libs/types/entities/Account";
+import { Account } from "@/libs/types/entities/Account";
 import Link from "next/link";
 import { MdEmail } from "react-icons/md";
 
 interface Props {
   profile: Profile,
-  account: Account,
+  account: Account | null,
 }
 
 export default function SettingsPage(props: Props) {
@@ -186,7 +186,7 @@ export default function SettingsPage(props: Props) {
             </div>
             <div className="rounded-md bg-base-100 flex flex-row">
               <MdEmail className="h-6 w-6 mx-2 mt-[6px]" />
-              <input type="text" className="text-lg w-full rounded-e-md" name="email" placeholder="New email address" defaultValue={account.email} />
+              <input type="text" className="text-lg w-full rounded-e-md" name="email" placeholder="New email address" defaultValue={account?.email} />
             </div>
             <div hidden={emailError == ""} className="text-red-400 text-lg">
               {emailError}
