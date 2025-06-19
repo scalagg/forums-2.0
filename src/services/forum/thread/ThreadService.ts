@@ -1,5 +1,3 @@
-'use server';
-
 import HTTPClient from "@/libs/HTTPClient";
 import { Thread, ThreadReply } from "@/types/api";
 
@@ -10,7 +8,8 @@ interface Result<T> {
 }
 
 interface RawThread {
-    _id: string;
+    _id?: string;
+    id: string;
     title: string;
     body: string;
     forum: string;
@@ -42,15 +41,49 @@ interface ReplyModel {
 const baseEndpoint = "/forum/thread";
 
 function createThreadInstance(data: RawThread): Thread {
-    return {
+    console.log("Creating thread instance with raw data:", {
         _id: data._id,
-        id: data._id,
+        id: data.id,
+        title: data.title,
+        forum: data.forum,
+        author: data.author,
+        createdAt: data.createdAt,
+        lastEditedAt: data.lastEditedAt
+    });
+    
+    console.log("Creating thread instance with timestamps:", {
+        createdAt: data.createdAt,
+        lastEditedAt: data.lastEditedAt,
+        createdAtType: typeof data.createdAt,
+        lastEditedAtType: typeof data.lastEditedAt
+    });
+    
+    // Handle timestamp conversion - check if it's a valid timestamp
+    // If createdAt is 0, null, or invalid, use current time
+    const createdAtTimestamp = data.createdAt && data.createdAt > 0 ? data.createdAt : Date.now();
+    const lastEditedTimestamp = data.lastEditedAt && data.lastEditedAt > 0 ? data.lastEditedAt : createdAtTimestamp;
+    
+    const createdAt = new Date(createdAtTimestamp).toISOString();
+    const updatedAt = new Date(lastEditedTimestamp).toISOString();
+    
+    console.log("Converted timestamps:", { createdAt, updatedAt });
+    
+    // Use the 'id' field as the thread ID since that's what the API returns
+    const threadId = data.id || data._id;
+    if (!threadId) {
+        console.error("No thread ID found in data:", data);
+        throw new Error("Thread data missing ID");
+    }
+    
+    return {
+        _id: threadId,
+        id: threadId,
         title: data.title,
         body: data.body,
         forum: data.forum,
         author: data.author,
-        createdAt: new Date(data.createdAt).toISOString(),
-        updatedAt: new Date(data.lastEditedAt).toISOString(),
+        createdAt: createdAt,
+        updatedAt: updatedAt,
         pinned: data.pinned,
         locked: data.locked,
         replies: []
@@ -67,8 +100,8 @@ export async function getThreadsByForum(
     try {
         console.log("Fetching threads for forum:", params.forumId, "page:", params.page || 1);
         // According to ForumController.java, threads are fetched via the forum endpoint
-        const [data, status, error] = await client.GetAsync<{ threads: RawThread[] }>(`/forum/forum/${params.forumId}?page=${params.page || 1}`);
-        console.log("Forum API response:", { data, status, error });
+        const [response, status, error] = await client.GetAsync<{ forum: { threads: RawThread[] } } | { threads: RawThread[] }>(`/forum/forum/${params.forumId}?page=${params.page || 1}`);
+        console.log("Forum API response:", { response, status, error });
         
         if (error) {
             console.error("Error fetching threads for forum:", error);
@@ -77,6 +110,18 @@ export async function getThreadsByForum(
                 error: `Failed to fetch threads: ${error}`
             };
         }
+        
+        if (!response) {
+            console.error("No response data returned for forum:", params.forumId);
+            return {
+                success: false,
+                error: 'Failed to fetch threads: No response data'
+            };
+        }
+        
+        // Handle both response formats: direct { threads: ... } or wrapped in { forum: { threads: ... } }
+        const data = 'forum' in response ? response.forum : response;
+        
         if (!data || !data.threads) {
             console.error("No threads data returned for forum:", params.forumId);
             return {
@@ -85,6 +130,20 @@ export async function getThreadsByForum(
             };
         }
         console.log("Successfully fetched threads:", data.threads.length);
+        console.log("Raw thread data:", JSON.stringify(data.threads, null, 2));
+        
+        // Log each thread's ID structure
+        data.threads.forEach((thread, index) => {
+            console.log(`Thread ${index} ID analysis:`, {
+                _id: thread._id,
+                _idType: typeof thread._id,
+                _idLength: thread._id?.length,
+                title: thread.title,
+                createdAt: thread.createdAt,
+                createdAtType: typeof thread.createdAt
+            });
+        });
+        
         return {
             success: true,
             data: data.threads.map(createThreadInstance)

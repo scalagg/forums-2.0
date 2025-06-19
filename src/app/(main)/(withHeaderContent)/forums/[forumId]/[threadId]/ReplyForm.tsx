@@ -4,11 +4,12 @@ import './styles.css'
 import useSession from "@/hooks/useSession";
 import { FormEvent, LegacyRef, MutableRefObject, useRef, useState } from "react";
 import { isResultError, newUuid } from "@/libs/Utils";
-import { CreateReply } from '@/services/forum/thread/ThreadService';
+import { createReply } from '@/services/forum/thread/ThreadService';
 import useGlobal from "@/hooks/useGlobal";
 import Thread from "@/libs/types/entities/Thread";
 import { getAllFilters } from '@/services/forum/filter/TextFilterService';
 import { canUseForum } from '@/services/forum/account/AccountService';
+import HTTPClient from '@/libs/HTTPClient';
 
 export interface WriteReplyData {
   forumId: string;
@@ -58,10 +59,15 @@ const WriteReply = (props: WriteReplyData) => {
         if (JSON.stringify(thisPost) == JSON.stringify(latestReply.value)) throw new Error("You just posted that!")
       }
 
-
-      const res = await CreateReply(id, '', body, forumId, author, parentId);
-      if (isResultError(res, true)) {
-        throw new Error(res[2] ?? "Unknown error");
+      const client = new HTTPClient(process.env.NEXT_PUBLIC_API_URL!);
+      const result = await createReply(client, {
+        threadId: parentId,
+        body: body,
+        author: author
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error || "Unknown error");
       }
       
       input.current!.value = ""

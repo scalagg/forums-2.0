@@ -1,5 +1,3 @@
-'use server';
-
 import HTTPClient from "@/libs/HTTPClient";
 import { Forum } from "@/types/api";
 
@@ -9,18 +7,21 @@ const baseEndpoint = "/forum/forum";
 export async function getForum(client: HTTPClient, id: string): Promise<Forum | null> {
   try {
     console.log("Fetching forum:", id);
-    const [forum, status, error] = await client.GetAsync<Forum>(`${baseEndpoint}/${id}`);
-    console.log("Forum API response:", { forum, status, error });
+    const [response, status, error] = await client.GetAsync<{ forum: Forum } | Forum>(`${baseEndpoint}/${id}`);
+    console.log("Forum API response:", { response, status, error });
     
     if (error) {
       console.error("Error fetching forum:", error);
       return null;
     }
     
-    if (!forum) {
+    if (!response) {
       console.error("No forum data returned for ID:", id);
       return null;
     }
+    
+    // Handle both response formats: direct Forum object or wrapped in { forum: Forum }
+    const forum = 'forum' in response ? response.forum : response;
     
     console.log("Successfully fetched forum:", forum.name);
     return forum;

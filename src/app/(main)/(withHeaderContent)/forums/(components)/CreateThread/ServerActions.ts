@@ -56,14 +56,29 @@ export async function createThread(formData: FormData, forumId: string) {
     if (bytes.byteLength < 2 * 1024)
       return "Image is too small"
 
-    const buffer = Buffer.from(bytes);
+    const buffer = new Uint8Array(bytes);
     const path = join(process.cwd(), "/public/img/thread/" + id + "." + image.type.split("/")[1]);
     await writeFile(path, buffer);
 
   }
 
   const author = session.uuid;
-  const result = await createThreadService(new HTTPClient(process.env.API_URL!), {
+  
+  // Debug: Log the API key being used (masked for security)
+  const apiKey = process.env.API_KEY || "development_key";
+  console.log("Using API key:", apiKey.substring(0, 4) + "..." + apiKey.substring(apiKey.length - 4));
+  console.log("API URL:", process.env.API_URL);
+  
+  // Create HTTPClient with user authentication headers
+  const client = new HTTPClient(process.env.API_URL!, {
+    "content-type": "application/json",
+    "Authorization": apiKey,
+    "X-User-UUID": session.uuid,
+    "X-User-Name": session.username,
+    "X-Session-Token": session.uuid // Use UUID as session token
+  });
+  
+  const result = await createThreadService(client, {
     title,
     body,
     forum: forumId,
@@ -71,6 +86,7 @@ export async function createThread(formData: FormData, forumId: string) {
   });
   
   if (!result.success) {
+    console.error("Thread creation failed:", result.error);
     return result.error || "Failed to create thread";
   }
 }

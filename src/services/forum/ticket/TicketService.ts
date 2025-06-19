@@ -1,6 +1,3 @@
-'use server';
-
-import HTTPClient from "@/libs/HTTPClient";
 import { Ticket, TicketStatus } from "@/types/api";
 
 const baseEndpoint = "/forum/ticket";

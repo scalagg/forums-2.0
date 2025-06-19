@@ -1,5 +1,3 @@
-'use server';
-
 import HTTPClient from "@/libs/HTTPClient";
 import WebEntry from "@/libs/types/entities/WebEntry";
 

@@ -1,6 +1,3 @@
-'use server';
-
-import HTTPClient from "@/libs/HTTPClient";
 import TicketCategory from "@/libs/types/entities/TicketCategory"
 
 /**

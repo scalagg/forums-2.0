@@ -1,18 +1,26 @@
 import { ServerMCHead } from '@/components/Minecraft/Server';
 import TableEntry from '@/components/Table/TableEntry';
 import NavLink from '@/components/NavLink/component';
-import Thread from '@/libs/types/entities/Thread';
+import { ThreadReply } from '@/types/api';
 import { stringToDate, toLocaleString } from '@/libs/Utils';
-import { getAuthorInfo, threadSorter } from '../Utils';
+import { getAuthorInfo } from '../Utils';
 
 export interface ThreadData {
   id: string;
   authorId: string; // UUID
   title: string;
   createdAt: string;
-  replies: Thread[];
+  replies: ThreadReply[];
   forumId: string;
 }
+
+// Thread reply sorter function for API ThreadReply type
+const replySorter = (a: ThreadReply, b: ThreadReply) => {
+  const dateA = new Date(a.createdAt).getTime();
+  const dateB = new Date(b.createdAt).getTime();
+  return dateB - dateA;
+};
+
 const ThreadComponent = async (props: ThreadData) => {
   const {
     id,
@@ -22,10 +30,10 @@ const ThreadComponent = async (props: ThreadData) => {
     replies,
     forumId,
   } = props;
-  const thisThreadId = id + '.' + forumId;
+  const thisThreadId = id;
   const authorPromise = getAuthorInfo(authorId);
 
-  const lastReply = replies.sort(threadSorter)[0];
+  const lastReply = replies.sort(replySorter)[0];
   const lastReplyAuthor = await getAuthorInfo(lastReply?.author);
   
   const author = await authorPromise

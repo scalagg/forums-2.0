@@ -2,13 +2,12 @@
 
 import { isResultError, stringToDate, toLocaleString } from "@/libs/Utils";
 import { ClientMCHead } from "@/components/Minecraft/Client";
-import Reply from '@/libs/types/entities/Thread'
 import { getAuthorInfo } from "../../Utils";
 import { IoTrash } from "react-icons/io5";
-import { DeleteReply, getThread } from "@/services/forum/thread/ThreadService";
+import { deleteReply, getThread } from "@/services/forum/thread/ThreadService";
 import { useCallback, useEffect, useState } from "react";
 import useGlobal from "@/hooks/useGlobal";
-import Thread from "@/libs/types/entities/Thread";
+import { ThreadReply } from "@/types/api";
 import Rank from "@/libs/types/entities/Rank";
 import { IoIosArrowDown } from "react-icons/io";
 import useSession from "@/hooks/useSession";
@@ -16,13 +15,13 @@ import Link from "next/link";
 import HTTPClient from "@/libs/HTTPClient";
 
 export interface RepliesData {
-  replies: Reply[];
+  replies: ThreadReply[];
   threadId: string;
 }
 const Replies = (props: RepliesData) => {
   const { replies, threadId } = props
   const [currReplies, setCurrReplies] = useState(replies)
-  const [latestReply, _] = useGlobal<{isAdd?: boolean, value: Thread}>("latestReply")
+  const [latestReply, _] = useGlobal<{isAdd?: boolean, value: ThreadReply}>("latestReply")
 
   const defaultN = 5;
   const [n, setN] = useState(defaultN)
@@ -30,7 +29,7 @@ const Replies = (props: RepliesData) => {
   console.log(replies);
 
   const updateReplies = useCallback(async () => {
-    const client = new HTTPClient(process.env.NEXT_PUBLIC_API_URL!);
+    const client = new HTTPClient(process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8080');
     const result = await getThread(client, threadId);
 
     if (!result.success) {
@@ -52,16 +51,13 @@ const Replies = (props: RepliesData) => {
     setCurrReplies(c => {
       const value = latestReply?.isAdd;
       if (value) {
-        c.push(latestReply.value)
-        latestReply.isAdd = undefined;
+        return [...c, latestReply.value];
       }
       else if (value == false) {
-        const idx = c.findIndex(e => e._id == latestReply.value._id)
-        if (idx > -1)
-          c.splice(idx, 1);
+        return c.filter(reply => reply._id !== latestReply.value._id);
       }
 
-      return [...c]
+      return c;
     })
   }, [latestReply])
   return (
@@ -72,7 +68,7 @@ const Replies = (props: RepliesData) => {
           <small className="mx-auto">0 replies in this thread. Be the first!</small> :
           <>
             {currReplies.slice(Math.max(len - n, 0), len).toReversed()
-              .map(r => <Reply key={r._id} id={r._id} authorId={r.author} createdAt={r.createdAt} content={r.body} parentId={r.parentThreadId} fullReplyId={r._id}/>)
+              .map(r => <Reply key={r._id} id={r._id} authorId={r.author} createdAt={r.createdAt} content={r.body} parentId={r.threadId} fullReplyId={r._id}/>)
             }
 
             {len > n ?
@@ -110,7 +106,7 @@ const Reply = (params: ReplyData) => {
   const createdAtDate = stringToDate(createdAt);
   const [author, setAuthor] = useState<{username: string, rank?: Rank | undefined}>()
   const {session} = useSession()
-  const [_, updateReplies] = useGlobal<{isAdd: boolean, value: Thread}>("latestReply")
+  const [_, updateReplies] = useGlobal<{isAdd: boolean, value: ThreadReply}>("latestReply")
 
   useEffect(() => {
     (async () => {
@@ -139,10 +135,14 @@ const Reply = (params: ReplyData) => {
         </div>
         {session && author && session?.username == author?.username ?
           <div className="flex-none flex bg-base-300 rounded-r-lg items-center px-2 py-1 text-neutral cursor-pointer hover:text-primary" onClick={
-            () => {
-              DeleteReply(parentId, fullReplyId).then(() => {
-                updateReplies({isAdd: false, value: {_id: fullReplyId}} as any)
-              })
+            async () => {
+              const client = new HTTPClient(process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8080');
+              const result = await deleteReply(client, fullReplyId);
+              if (result.success) {
+                updateReplies({isAdd: false, value: {_id: fullReplyId} as ThreadReply})
+              } else {
+                console.error("Failed to delete reply:", result.error);
+              }
             }
           }><IoTrash className="h-5 w-5"/></div> : <></>
         }

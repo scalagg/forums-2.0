@@ -3,15 +3,24 @@ import ThreadComponent from './Thread';
 import { getThreadsByForum, getThread } from '@/services/forum/thread/ThreadService';
 import { getForum } from '@/services/forum/forum/ForumService';
 import { isResultError } from '@/libs/Utils';
-import { getThreadShortId, threadSorter } from '../Utils';
+import { getThreadShortId } from '../Utils';
 import Navigation from "@/app/(main)/(withHeaderContent)/forums/(components)/Navigation";
 import HTTPClient from '@/libs/HTTPClient';
+import { Thread } from '@/types/api';
 
 interface Params {
   params: {
     forumId: string;
   }
 }
+
+// Thread sorter function for API Thread type
+const threadSorter = (a: Thread, b: Thread) => {
+  const dateA = new Date(a.createdAt).getTime();
+  const dateB = new Date(b.createdAt).getTime();
+  return dateB - dateA;
+};
+
 export default async function Page({ params: { forumId } }: Params) {
   const result0 = await getThreadsByForum(new HTTPClient(process.env.API_URL!), { forumId });
   if (!result0.success) {
@@ -19,12 +28,31 @@ export default async function Page({ params: { forumId } }: Params) {
   }
   const threads = result0.data || [];
   
+  console.log("Threads from API:", threads.map(t => ({ 
+    _id: t._id, 
+    id: t.id, 
+    title: t.title,
+    forum: t.forum 
+  })));
+  
+  // Only fetch replies for threads that have valid IDs (not timestamps)
   for (let t = 0; t < (threads?.length ?? 0); t++) {
-    const result = await getThread(new HTTPClient(process.env.API_URL!), threads![t]._id);
+    const thread = threads![t];
+    const threadId = thread.id || thread._id;
+    
+    // Skip if the thread ID looks like a timestamp (more than 10 digits)
+    if (threadId && threadId.length > 10 && /^\d+$/.test(threadId)) {
+      console.warn("Skipping thread with timestamp-like ID:", threadId);
+      continue;
+    }
+    
+    if (threadId) {
+      const result = await getThread(new HTTPClient(process.env.API_URL!), threadId);
     if (!result.success) {
       console.error("Error while fetching thread replies: " + result.error);
     }
     threads![t].replies = result.data?.replies ?? [];
+    }
   }
 
   const forum = await getForum(new HTTPClient(process.env.API_URL!), forumId);
@@ -51,11 +79,34 @@ export default async function Page({ params: { forumId } }: Params) {
             <span className="col-span-full text-center my-4">{isResultError(result0) ?
               <h4>Error while fetching threads for forum.</h4> :
               <small>0 threads in this forum. Be the first!</small>}</span> :
-            threads.sort(threadSorter).map(t =>
-              <ThreadComponent key={t._id} id={getThreadShortId(t._id)!}
-                               authorId={t.author} title={t.title} createdAt={t.createdAt} replies={t.replies}
-                               forumId={t.forum}/>
-            )}
+            threads.sort(threadSorter).map((t, index) => {
+              console.log("Creating ThreadComponent with thread:", { 
+                _id: t._id, 
+                id: t.id,
+                title: t.title, 
+                forum: t.forum 
+              });
+              
+              // Check if we have a valid thread ID
+              const threadId = t.id || t._id;
+              if (!threadId) {
+                console.error("Thread has no valid ID:", t);
+                return null;
+              }
+              
+              // Skip threads with timestamp-like IDs
+              if (threadId.length > 10 && /^\d+$/.test(threadId)) {
+                console.warn("Skipping thread with timestamp-like ID:", threadId);
+                return null;
+              }
+              
+              return (
+                <ThreadComponent key={`${threadId}-${index}`} id={threadId}
+                                 authorId={t.author} title={t.title} createdAt={t.createdAt} replies={t.replies}
+                                 forumId={t.forum}/>
+              );
+            }).filter(Boolean)
+          }
         </Table>
       </div>
     </Navigation>

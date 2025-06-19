@@ -1,6 +1,3 @@
-'use server';
-
-import HTTPClient from "@/libs/HTTPClient";
 import Profile, { ProfileResponse } from "@/libs/types/entities/Profile";
 import ProfileConnections from "@/libs/types/entities/ProfileConnections";
 

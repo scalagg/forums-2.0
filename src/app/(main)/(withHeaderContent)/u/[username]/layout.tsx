@@ -88,7 +88,9 @@ export default async function Layout({ children: children }: UserParams) {
     ? new Date(Number(lastConnection)).toLocaleDateString()
     : "N/A";
 
-  let punishments = (await getPunishments(uuid))[0] || [];
+  // Temporarily disabled to stop console bloat
+  let punishments: any[] = [];
+  // let punishments = (await getPunishments(uuid))[0] || [];
 
   if (punishments.find(p => p.punishmentType == "BLACKLIST" && p.active))
     userStatus = "blacklisted"

@@ -1,5 +1,13 @@
 export const stringToDate = (dateString?: string) => {
   if (!dateString) return null;
+  
+  // First try to parse as ISO string (new format)
+  const isoDate = new Date(dateString);
+  if (!isNaN(isoDate.getTime())) {
+    return isoDate;
+  }
+  
+  // Then try to parse as integer timestamp (old format)
   const dateInt = tryParseInt(dateString);
   return !dateInt || dateInt === -1 ? null : new Date(dateInt);
 };

@@ -1,7 +1,5 @@
-'use server';
 
 import HTTPClient from "@/libs/HTTPClient";
-import getSession from "@/libs/session/getSession";
 import { Account, AccountSettings, AccountProfile } from "@/libs/types/entities/Account";
 import { SessionData } from "@/libs/session/iron";
 import { getPunishments } from "../punishment/PunishmentService";
@@ -9,24 +7,6 @@ import { UUID } from '@/libs/types/UUID';
 
 // Variables
 const baseEndpoint = "/forum/account";
-const interceptSession =
-  (method: any): (body: any) => Promise<[SessionData | null, number, string | null]> =>
-    async (body: any) => {
-      const result = await method(body);
-      if (!result[0]) return result;
-
-      const session = await getSession();
-      session.username = result[0].username;
-      session.uuid = result[0].uuid;
-      session.email = result[0].email;
-      session.isLoggedIn = true;
-      await session.save();
-
-      return [{
-        ...result[0],
-        isLoggedIn: session.isLoggedIn
-      }, result[1], result[2]];
-    };
 
 // Define Result type since it's not available
 interface Result<T> {
@@ -205,12 +185,12 @@ export const UpdateAccountEmail = async (
  * @param body The JSON object containing the password and token.
  * @return ResponseEntity indicating the result of the registration completion.
  */
-export const Register = interceptSession(async (
+export const Register = async (
   data: { token: string, password: string },
   client: HTTPClient = new HTTPClient(process.env.API_URL!)
-): Promise<[SessionData | null, number, string | null]> =>
-  await client.PostAsync(`${baseEndpoint}/register`, data)
-);
+): Promise<[SessionData | null, number, string | null]> => {
+  return await client.PostAsync(`${baseEndpoint}/register`, data);
+};
 
 /**
  * Endpoint for completing the registration process by setting the account password.
@@ -218,12 +198,12 @@ export const Register = interceptSession(async (
  * @param body The JSON object containing the password and token.
  * @return ResponseEntity indicating the result of the registration completion.
  */
-export const Reset = interceptSession(async (
+export const Reset = async (
   data: { token: string, newPassword: string },
   client: HTTPClient = new HTTPClient(process.env.API_URL!)
-): Promise<[SessionData | null, number, string | null]> =>
-  await client.PutAsync(`${baseEndpoint}/resetPassword`, data)
-);
+): Promise<[SessionData | null, number, string | null]> => {
+  return await client.PutAsync(`${baseEndpoint}/resetPassword`, data);
+};
 
 /**
  * Endpoint for handling login requests.
@@ -232,12 +212,12 @@ export const Reset = interceptSession(async (
  * @return ResponseEntity containing the account information for successful logins.
  */
 // In the API: @GetMapping(path = "/forum/account/login/{username}")
-export const Login = interceptSession(async (
+export const Login = async (
   data: { username: string, password: string },
   client: HTTPClient = new HTTPClient(process.env.API_URL!)
-): Promise<[SessionData | null, number, string | null]> =>
-  await client.GetAsync(`${baseEndpoint}/login/${data.username}?` + new URLSearchParams({ password: data.password }))
-);
+): Promise<[SessionData | null, number, string | null]> => {
+  return await client.GetAsync(`${baseEndpoint}/login/${data.username}?` + new URLSearchParams({ password: data.password }));
+};
 
 /**
  * Gets a list of friends for a user from their profile
@@ -398,13 +378,11 @@ export const canUseForum = async (uuid: string) => {
     return false;
 
   const punishments = (await getPunishments(uuid))[0] || [];
-  if (punishments.filter(p => p.active).find(p =>
-    p.punishmentType == "BLACKLIST"
-    || p.punishmentType == "MUTE"
-    || p.punishmentType == "BAN"))
+  if (punishments.filter(p => (p as any).active).find(p =>
+    (p as any).punishmentType == "BLACKLIST"
+    || (p as any).punishmentType == "MUTE"
+    || (p as any).punishmentType == "BAN"))
     return false;
-
-  console.log(punishments);
 
   return true;
 }

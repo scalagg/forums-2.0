@@ -73,7 +73,7 @@ export default function Forum({
       {lastThread && (
         <div className="mt-2 text-sm text-neutral-400">
           <span>Latest: </span>
-          <a href={`/forums/${lastThread.forum}/${getThreadShortId(lastThread._id)}`} className="text-blue-400 hover:underline">
+          <a href={`/forums/${lastThread.forum}/${lastThread._id}`} className="text-blue-400 hover:underline">
             {lastThread.title}
           </a>
           <span className="ml-2">

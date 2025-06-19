@@ -41,13 +41,23 @@ export default class HTTPClient {
     const client: InternalClient =
       async (method: string, route: string, body?: BodyInit) => {
         try {
+          const url = new URL(route, this.uri);
+          const requestBody = body ? JSON.stringify(body) : undefined;
+          
+          // Debug: Log the request details
+          console.log(`HTTP ${method} ${url.toString()}`);
+          console.log("Headers:", headers);
+          if (requestBody) {
+            console.log("Body:", requestBody);
+          }
+          
           return await fetch(
             new Request(
-              new URL(route, this.uri),
+              url,
               {
                 method: method,
                 headers: headers,
-                body: body ? JSON.stringify(body) : undefined,
+                body: requestBody,
                 cache: this.cacheStrategy,
                 next: {
                   revalidate: this.cacheLifetime
@@ -75,6 +85,9 @@ export default class HTTPClient {
         console.error(`Failed to connect to API at ${this.uri}. Make sure the API server is running.`);
         return null;
     }
+
+    // Debug: Log the response status
+    console.log(`Response status: ${httpResponse.status} ${httpResponse.statusText}`);
 
     if (httpResponse.status === 401) { // Unauthorized
         client = await this.getClientAsync(true);
@@ -106,6 +119,7 @@ export default class HTTPClient {
     // For non-2xx responses, return the error message from the JSON if available
     if (!httpResponse.ok) {
       const errorMessage = json?.error || json?.message || httpResponse.statusText;
+      console.error(`HTTP ${httpResponse.status} error:`, errorMessage);
       return [null, httpResponse.status, errorMessage];
     }
     

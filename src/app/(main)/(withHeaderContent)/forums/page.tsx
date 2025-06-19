@@ -49,7 +49,7 @@ export default async function Page({ }: UserParams) {
         return {
           thread: thread!,
           item: <ThreadInfo 
-            id={getThreadShortId(thread!._id)} 
+            id={thread!._id} 
             forumId={thread!.forum} 
             title={thread!.title} 
             threadAuthor={await getAuthorInfo(thread!.author)} 
@@ -77,7 +77,7 @@ export default async function Page({ }: UserParams) {
           if (!res?.reply) return;
           const author = await getAuthorInfo(res.reply.author);
           const authorName = author!.username;
-          const threadUrl = `/forums/${res.reply.forum}/${getThreadShortId(res.parent._id)}`;
+          const threadUrl = `/forums/${res.reply.forum}/${res.parent._id}`;
           return {
             thread: res.reply,
             item: (

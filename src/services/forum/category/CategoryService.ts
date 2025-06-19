@@ -1,5 +1,3 @@
-'use server';
-
 import HTTPClient from "@/libs/HTTPClient";
 import { ForumCategory } from "@/types/api";
 

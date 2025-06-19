@@ -10,7 +10,6 @@ import Bullet from './Bullet';
 import ClipboardTooltip from '@/components/ClipboardTooltip/ClipboardTooltip';
 import { getThread } from '@/services/forum/thread/ThreadService';
 import Thread from '@/libs/types/entities/Thread';
-import { min } from 'rxjs';
 import { existsSync } from 'fs';
 import { marked } from "marked"
 import DOMPurify from 'isomorphic-dompurify';

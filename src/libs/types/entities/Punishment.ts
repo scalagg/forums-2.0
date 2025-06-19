@@ -13,4 +13,6 @@ export default interface Punishment {
   removedReason: string | null;
   target: string;
   targetCurrentIp: string | null;
+  active?: boolean;
+  punishmentType?: string;
 }
