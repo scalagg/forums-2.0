@@ -118,25 +118,29 @@ export const GetGrants = async (uuid: string, client: HTTPClient = new HTTPClien
       console.warn('GetGrants called with empty uuid!');
       console.trace();
     }
-    return [[], 400, 'UUID is required'];
+    return { success: false, data: null, error: 'UUID is required' };
   }
   return await client.GetAsync<Grant[]>(`/grant/profile/${uuid}`);
 };
 
 // Helper to get only active ranks (not removed/expired)
 export const GetActiveRanks = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
-  const [grants, status, error] = await GetGrants(uuid, client);
-  if (!grants || !Array.isArray(grants)) return [];
+  const result = await GetGrants(uuid, client);
+  if (!result.success || !result.data || !Array.isArray(result.data)) {
+    return { success: false, data: null, error: result.error || 'Failed to fetch grants' };
+  }
+  
   // Use 'active' field to filter active grants
-  return (grants as Grant[]).filter((grant: Grant) => grant.active === 'true' || grant.permanent === 'true');
+  const activeGrants = result.data.filter((grant: Grant) => grant.active === 'true' || grant.permanent === 'true');
+  return { success: true, data: activeGrants, error: null };
 };
 
 export const getHighestRank = async (uuid: string, client: HTTPClient = new HTTPClient(process.env.API_URL!)) => {
   const activeRanks = await GetActiveRanks(uuid, client);
-  if (!activeRanks.length) return undefined;
+  if (!activeRanks.success || !activeRanks.data || !activeRanks.data.length) return undefined;
   
   // Get the first active rank and fetch its details
-  const highestGrant = activeRanks[0];
+  const highestGrant = activeRanks.data[0];
   const [rank] = await client.GetAsync<Rank>(`/rank/${highestGrant.rankId}`);
   return rank;
 };

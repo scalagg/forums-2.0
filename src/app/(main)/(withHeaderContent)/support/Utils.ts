@@ -3,29 +3,46 @@ import { GetActiveRanks } from '@/services/controller/GrantService';
 import Rank from '@/libs/types/entities/Rank';
 import { isResultError, tryParseInt } from '@/libs/Utils';
 import Thread from '@/libs/types/entities/Thread';
+import HTTPClient from '@/libs/HTTPClient';
 
-export const getAuthorInfo = async (authorId?: string) => {
+export const getAuthorInfo = async (authorId?: string, client?: HTTPClient) => {
   if (!authorId) return;
 
+  const httpClient = client || new HTTPClient(process.env.API_URL!);
   const author: {username: string, rank?: Rank} = {username: '', rank: undefined};
-  const profilePromise = GetProfileFromUuid(authorId)
-    .then(res => {
-      if (!isResultError(res)) return res;
-      console.error("Error fetching author: HTTP " + res[1]);
-    });
-  const ranksPromise = GetActiveRanks(authorId)
-    .then(res => {
-      if (!isResultError(res)) return res;
-      console.error("Error fetching author rank: HTTP " + res[1]);
-    });
   
-  const profile = await profilePromise;
-  if (!profile) return;
-  author.username = profile[0]!.name;
+  try {
+    const profileResult = await GetProfileFromUuid(authorId, httpClient);
+    if (Array.isArray(profileResult)) {
+      if (isResultError(profileResult)) {
+        console.error("Error fetching author profile: HTTP " + profileResult[1]);
+        return;
+      }
+      author.username = profileResult[0]!.name;
+    } else {
+      if (!profileResult.success) {
+        console.error("Error fetching author profile:", profileResult.error);
+        return;
+      }
+      author.username = profileResult.data!.name;
+    }
 
-  const ranks = await ranksPromise;
-  if (ranks)
-    author.rank = ranks[0]!.sort((a, b) => a.priority - b.priority)[ranks[0]!.length - 1];
+    const ranksResult = await GetActiveRanks(authorId, httpClient);
+    if (Array.isArray(ranksResult)) {
+      if (isResultError(ranksResult)) {
+        console.error("Error fetching author rank: HTTP " + ranksResult[1]);
+      } else if (ranksResult[0] && ranksResult[0].length > 0) {
+        author.rank = ranksResult[0].sort((a, b) => a.priority - b.priority)[ranksResult[0].length - 1];
+      }
+    } else {
+      if (ranksResult.success && ranksResult.data && ranksResult.data.length > 0) {
+        const sortedRanks = ranksResult.data.sort((a, b) => a.priority - b.priority);
+        author.rank = sortedRanks[sortedRanks.length - 1];
+      }
+    }
+  } catch (error) {
+    console.error("Error in getAuthorInfo:", error);
+  }
 
   return author;
 };
